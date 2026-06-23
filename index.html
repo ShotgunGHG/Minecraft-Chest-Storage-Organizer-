@@ -2,8 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Storage Tracker — Minecraft</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Storage Tracker</title>
+
+<!-- iOS Home Screen / PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Storage Tracker"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#1E1E1E"/>
+
+<!-- Inline icon — no extra files needed -->
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAEc0lEQVR42u3dvW0VQRTFcceIEvZ9J4hCSJBcBHINFh2QkNCBRQ0ugoSalgLAmrfc3fEZv19woyOfteae6O/jmbvn7x9mY97K3DkEI9DGCLQxAm2MQBuB/muOx+N8uVzm/X4/n06neZqm+XA4zOfzed7tdnT6q+oPn9/9c14MtMOjJ+uLA+3w6Mn64kA7PHqyvjjQDo+erC8OtMOjJ+uLA+3w6Mn64kA7PHqyvjjQDo+OQ9PpODSdjkPTcehtOfTj/dSc52+fmsPnNn3iOLSF8an4xHFoC+NT8Ynj0BbGp+ITx6EtjE/FJ45DWxifik8ch7YwPhWfOA5tYXwqPjg0Hxx6Sw59zS/94+Fjc37//NIcPjk+a+09jkMLtEBX9h7HoQVaoCt7j+PQAi3Qlb3HcWiBFujK3uM4tEALdGXvcRxaoAW6svc4Di3QAl3ZOw7NB4fekkMLB5+KTxyHtjA+FZ84Dm1hfCo+cRzawvhUfOI4tIXxqfjEcWgL41PxiePQFsan4hPHoS2MT8UHh+aDQ+tD89GH1ofmow8t0AKtDy1A+tD60Hz0ofWh+ehD60PzcS+HQAu0ezkECId+Q33oX0/H5jx9fd+ca3xG/NZaQfROYac+tED3CbR3Cjv1oQW6T6C9U9ipDy3QfQLtncJOfWiB7hPo0R/hHKYPLdB9Aj36C7PD9KEFuk+gR38eeZh7OQS6T6BHf/sbhxZoHHrJx9c66LUCdI3PiN96rf/huzkOLdBjBRqHbnxcoMcKNA7d+LhAjxVoHLrxcYEeK9A4dOPjAj1WoHHoxscFeqxA49CNjwv0WIHGoXFoHFof2r8z8XE/NB/3Q7sfmo/7od0Pzcf90O6H5uOdQgvj451CPt4p9E4hH+8U4tB8cGj3Q/NxP7QACbT7oQXI/dDuh+bjfmj3Q/NxP7R3CgXaO4UCJNDeKRQg7xTi0HxwaH1oPvrQ+tB89KEtno8+NB99aH1oPvrQ+tB89KEtjI97OSyej3s5+ODQ+tB89KH1ofnoQwu0QOtDC5A+tD40H31ofWg++tD60HzcyyHQAu1eDgHCofWh+ehD60Pz0YfWh+ajD21hfPSh+ehD60Pz0YfWh+ajD+1eDj7u5bB4PkNxaH8p9JdCfWgBEmh9aEHUh9aH5qMPrQ/NRx9aoAVaH1qABNq9HHzcy4FD88Gh9aH56ENbGB99aIvXh9aH5qMPrQ/NRx9aH5qPPrSF8XEvBx/3cuDQfHDodTn04/1kzH9PHIe2FFOZOA5tKaYycRzaUkxl4ji0pZjKxHFoSzGViePQlmIqE8ehLcVUBoc2ODQObXBoHNrg0Mbg0AaHxqENDo1DGxwahzY4tDE4tMGhAzg0nd5T35xD0+k99c05NJ3eU9+cQ9PpPfXNOTSd3lPfnEPT6T31zTk0nd5T35xD0+k9dRyajkM7PDoOTafj0HQ6Dk3HoXFoOg7tcOk4NJ2OQ9PpODQdh8ah6Ti0w6Xj0HR6Bod+6QeMSR6BNgJtjEAbI9DGCLS54fkDAXrqdjMbWVYAAAAASUVORK5CYII="/>
+<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAAEc0lEQVR42u3dvW0VQRTFcceIEvZ9J4hCSJBcBHINFh2QkNCBRQ0ugoSalgLAmrfc3fEZv19woyOfteae6O/jmbvn7x9mY97K3DkEI9DGCLQxAm2MQBuB/muOx+N8uVzm/X4/n06neZqm+XA4zOfzed7tdnT6q+oPn9/9c14MtMOjJ+uLA+3w6Mn64kA7PHqyvjjQDo+erC8OtMOjJ+uLA+3w6Mn64kA7PHqyvjjQDo+OQ9PpODSdjkPTcehtOfTj/dSc52+fmsPnNn3iOLSF8an4xHFoC+NT8Ynj0BbGp+ITx6EtjE/FJ45DWxifik8ch7YwPhWfOA5tYXwqPjg0Hxx6Sw59zS/94+Fjc37//NIcPjk+a+09jkMLtEBX9h7HoQVaoCt7j+PQAi3Qlb3HcWiBFujK3uM4tEALdGXvcRxaoAW6svc4Di3QAl3ZOw7NB4fekkMLB5+KTxyHtjA+FZ84Dm1hfCo+cRzawvhUfOI4tIXxqfjEcWgL41PxiePQFsan4hPHoS2MT8UHh+aDQ+tD89GH1ofmow8t0AKtDy1A+tD60Hz0ofWh+ehD60PzcS+HQAu0ezkECId+Q33oX0/H5jx9fd+ca3xG/NZaQfROYac+tED3CbR3Cjv1oQW6T6C9U9ipDy3QfQLtncJOfWiB7hPo0R/hHKYPLdB9Aj36C7PD9KEFuk+gR38eeZh7OQS6T6BHf/sbhxZoHHrJx9c66LUCdI3PiN96rf/huzkOLdBjBRqHbnxcoMcKNA7d+LhAjxVoHLrxcYEeK9A4dOPjAj1WoHHoxscFeqxA49CNjwv0WIHGoXFoHFof2r8z8XE/NB/3Q7sfmo/7od0Pzcf90O6H5uOdQgvj451CPt4p9E4hH+8U4tB8cGj3Q/NxP7QACbT7oQXI/dDuh+bjfmj3Q/NxP7R3CgXaO4UCJNDeKRQg7xTi0HxwaH1oPvrQ+tB89KEtno8+NB99aH1oPvrQ+tB89KEtjI97OSyej3s5+ODQ+tB89KH1ofnoQwu0QOtDC5A+tD40H31ofWg++tD60HzcyyHQAu1eDgHCofWh+ehD60Pz0YfWh+ajD21hfPSh+ehD60Pz0YfWh+ajD+1eDj7u5bB4PkNxaH8p9JdCfWgBEmh9aEHUh9aH5qMPrQ/NRx9aoAVaH1qABNq9HHzcy4FD88Gh9aH56ENbGB99aIvXh9aH5qMPrQ/NRx9aH5qPPrSF8XEvBx/3cuDQfHDodTn04/1kzH9PHIe2FFOZOA5tKaYycRzaUkxl4ji0pZjKxHFoSzGViePQlmIqE8ehLcVUBoc2ODQObXBoHNrg0Mbg0AaHxqENDo1DGxwahzY4tDE4tMGhAzg0nd5T35xD0+k99c05NJ3eU9+cQ9PpPfXNOTSd3lPfnEPT6T31zTk0nd5T35xD0+k9dRyajkM7PDoOTafj0HQ6Dk3HoXFoOg7tcOk4NJ2OQ9PpODQdh8ah6Ti0w6Xj0HR6Bod+6QeMSR6BNgJtjEAbI9DGCLS54fkDAXrqdjMbWVYAAAAASUVORK5CYII="/>
+
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"/>
 <style>
