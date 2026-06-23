@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Storage Tracker — Minecraft</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --font:'Press Start 2P',monospace;
+  --bg:#1E1E1E;--panel:#303030;--slot:#373737;
+  --text:#FFF;--dim:#AAA;
+  --green:#55FF55;--gold:#FFAA00;--red:#FF5555;
+}
+html,body{height:100%;font-family:var(--font);background:#000;color:var(--text);overflow:hidden}
+/* Panorama */
+#pano{position:fixed;inset:0;z-index:0}
+#sky{position:absolute;inset:0;background:linear-gradient(180deg,#0d0020 0%,#1a0535 18%,#5c1f6e 36%,#c86430 55%,#e8a840 70%,#7ecaea 88%,#5ba8d5 100%);animation:skyS 40s ease-in-out infinite alternate}
+@keyframes skyS{0%{filter:hue-rotate(0deg) brightness(.82)}50%{filter:hue-rotate(12deg) brightness(1)}100%{filter:hue-rotate(-8deg) brightness(.9)}}
+.star{position:absolute;width:2px;height:2px;background:#fff;border-radius:0;animation:tw 4s ease-in-out infinite alternate}
+@keyframes tw{0%{opacity:.8}100%{opacity:.1}}
+.cloud{position:absolute;background:rgba(255,255,255,.72)}
+#darken{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+/* App */
+#app{position:relative;z-index:1;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow:hidden}
+/* Screens */
+.screen{display:none;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;padding:12px;overflow:hidden}
+.screen.active{display:flex}
+/* Button */
+.btn{display:block;width:100%;padding:8px 14px;font-family:var(--font);font-size:9px;letter-spacing:.5px;color:#3F3F3F;text-shadow:1px 1px 0 rgba(255,255,255,.4);cursor:pointer;border:none;outline:none;text-align:center;background:linear-gradient(180deg,#C6C6C6 0%,#8B8B8B 52%,#333 100%);border-top:2px solid #C6C6C6;border-left:2px solid #C6C6C6;border-right:2px solid #333;border-bottom:2px solid #333;user-select:none;transition:filter .05s;white-space:nowrap;image-rendering:pixelated}
+.btn:hover{background:linear-gradient(180deg,#E0E0E0 0%,#AAA 52%,#555 100%);color:var(--gold);text-shadow:1px 1px 0 rgba(0,0,0,.5)}
+.btn:active{border-top-color:#333;border-left-color:#333;border-right-color:#C6C6C6;border-bottom-color:#C6C6C6;transform:translate(1px,1px)}
+.btn:disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
+.btn.sm{font-size:7px;padding:5px 8px}
+.btn.red{background:linear-gradient(180deg,#C43030,#882020,#440000);color:#FFB0B0;border-color:#C43030 #440000 #440000 #C43030}
+.btn.red:hover{color:#FFD0D0}
+.btn.green{background:linear-gradient(180deg,#30A030,#207020,#104010);color:#B0FFB0;border-color:#30A030 #104010 #104010 #30A030}
+.btn.green:hover{color:#D0FFD0}
+/* Input */
+.inp{width:100%;padding:7px 10px;font-family:var(--font);font-size:8px;color:var(--text);background:var(--slot);border:2px solid;border-color:#111 #666 #666 #111;outline:none;caret-color:var(--green)}
+.inp:focus{border-color:var(--gold)}
+.inp::placeholder{color:#555}
+/* Panel */
+.panel{background:var(--panel);border:3px solid;border-color:#666 #222 #222 #666;padding:14px}
+.ptitle{font-size:9px;color:var(--dim);text-align:center;letter-spacing:1px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #4A4A4A}
+/* Slot */
+.slot{width:38px;height:38px;background:var(--slot);border:2px solid;border-color:#111 #777 #777 #111;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;position:relative;flex-shrink:0;image-rendering:pixelated;vertical-align:top}
+.slot:hover{background:#454545}
+.slot canvas{image-rendering:pixelated;display:block}
+.slot .sc{position:absolute;bottom:1px;right:2px;font-size:6px;color:#FFF;text-shadow:1px 1px 0 #000,0 0 2px #000;pointer-events:none;line-height:1}
+/* Logo */
+.logo{font-size:clamp(13px,3vw,24px);color:var(--gold);text-shadow:3px 3px 0 #7A4000,-1px -1px 0 #000,0 0 20px rgba(255,170,0,.4);letter-spacing:2px;animation:fl 3s ease-in-out infinite;line-height:1.5;text-align:center}
+.logosub{font-size:clamp(5px,1.2vw,8px);color:var(--dim);letter-spacing:3px;margin-top:6px;text-align:center}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+/* World card */
+.wcard{display:flex;align-items:center;gap:10px;padding:10px;background:var(--slot);border:2px solid #555;cursor:pointer;transition:border-color .1s;margin-bottom:6px}
+.wcard:hover,.wcard.active{border-color:var(--gold)}
+/* Container card */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px;overflow-y:auto;padding:4px;flex:1}
+.ccard{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 6px;background:var(--slot);border:2px solid #555;cursor:pointer;transition:border-color .1s;text-align:center}
+.ccard:hover{border-color:var(--gold)}
+/* Fill bar */
+.fbar{width:100%;height:4px;background:#1A1A1A;border:1px solid #444;margin-top:3px}
+.fbar-inner{height:100%;transition:width .3s}
+/* Item row */
+.irow{display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--slot);border:1px solid #444;cursor:pointer;transition:border-color .1s;margin-bottom:4px}
+.irow:hover,.irow.sel{border-color:var(--gold)}
+.irow.sel{border-color:var(--green)}
+/* Item grid */
+.ipick{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;overflow-y:auto;max-height:240px;padding:4px}
+.iopt{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 3px;background:var(--slot);border:2px solid #555;cursor:pointer;text-align:center;transition:border-color .1s}
+.iopt:hover,.iopt.sel{border-color:var(--gold)}
+.iopt.sel{border-color:var(--green)}
+/* Container picker */
+.cpick{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;overflow-y:auto;padding:4px;flex:1}
+.copt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;background:var(--slot);border:2px solid #555;cursor:pointer;text-align:center;transition:border-color .1s}
+.copt:hover,.copt.sel{border-color:var(--gold)}
+.copt.sel{border-color:var(--green)}
+/* Category tabs */
+.cats{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px}
+.cat-tab{padding:4px 7px;font-family:var(--font);font-size:6px;background:var(--slot);border:1px solid #555;color:var(--dim);cursor:pointer}
+.cat-tab.on{border-color:var(--gold);color:var(--gold);background:#3A3020}
+/* Top bar */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(0,0,0,.85);border-bottom:2px solid #444;flex-shrink:0}
+.tbtitle{font-size:8px;color:var(--gold);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Stats */
+.srow{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.schip{display:flex;gap:5px;align-items:center;padding:4px 8px;background:var(--slot);border:1px solid #444}
+/* Modal */
+.mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);align-items:center;justify-content:center;z-index:100;padding:12px}
+.mbg.open{display:flex}
+.modal{width:min(500px,95vw);max-height:88vh;display:flex;flex-direction:column}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+/* Scrollbar */
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:#1A1A1A}::-webkit-scrollbar-thumb{background:#555;border:2px solid #333}
+/* Toast */
+#toast{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:2px solid var(--green);color:var(--green);font-size:7px;padding:10px 16px;z-index:200;white-space:nowrap;animation:tin .2s ease}
+@keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+/* Inv grid */
+.invgrid{display:flex;flex-wrap:wrap;gap:3px;padding:4px}
+/* Search result */
+.sres{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--slot);border:1px solid #444;margin-bottom:4px;cursor:pointer}
+.sres:hover{border-color:var(--gold)}
+/* Util */
+.mt8{margin-top:8px}.mt10{margin-top:10px}.mt12{margin-top:12px}
+.flex{display:flex}.gap8{gap:8px}.gap6{gap:6px}.gap4{gap:4px}
+.f7{font-size:7px}.f6{font-size:6px}.f5{font-size:5px}
+.dim{color:var(--dim)}.gold{color:var(--gold)}.gn{color:var(--green)}.rd{color:var(--red)}
+.scroll{overflow-y:auto}
+canvas.tex{image-rendering:pixelated;display:block}
+/* how-to steps */
+.step{display:flex;gap:10px;margin-bottom:10px}
+.step-n{font-size:11px;color:var(--gold);flex-shrink:0;min-width:22px}
+.step-t{font-size:7px;line-height:1.8}
+@media(max-width:480px){
+  .cpick{grid-template-columns:repeat(2,1fr)}
+  .ipick{grid-template-columns:repeat(4,1fr)}
+  .logo{font-size:14px}
+}
+</style>
+</head>
+<body>
+<!-- Panorama background -->
+<div id="pano">
+  <div id="sky"></div>
+  <div id="cloud-layer"></div>
+  <div id="darken"></div>
+</div>
+
+<div id="app">
+
+  <!-- ── MENU ── -->
+  <div id="screen-menu" class="screen active">
+    <div style="display:flex;gap:4px;margin-bottom:12px;justify-content:center" id="menu-art"></div>
+    <div class="logo">⛏ Storage Tracker</div>
+    <div class="logosub" style="margin-bottom:28px">Minecraft Item Manager</div>
+    <div style="display:flex;flex-direction:column;gap:8px;width:min(280px,80vw)">
+      <button class="btn" onclick="gotoWorlds()">Start Storage Tracking</button>
+      <button class="btn" onclick="show('howto')">How It Works</button>
+    </div>
+    <div style="margin-top:24px;font-size:5px;color:#555;text-align:center;line-height:2.4">
+      Not affiliated with Mojang Studios or Microsoft.<br>
+      Minecraft™ is a trademark of Mojang AB.
+    </div>
+  </div>
+
+  <!-- ── HOW IT WORKS ── -->
+  <div id="screen-howto" class="screen">
+    <div class="panel" style="width:min(420px,92vw)">
+      <div class="ptitle">★  How It Works  ★</div>
+      <div class="step"><span class="step-n">1.</span><span class="step-t">Create a world for each Minecraft save.</span></div>
+      <div class="step"><span class="step-n">2.</span><span class="step-t">Add containers — chests, barrels, shulkers...</span></div>
+      <div class="step"><span class="step-n">3.</span><span class="step-t">Add items with quantities (64, 4×64, 2 stacks+16).</span></div>
+      <div class="step"><span class="step-n">4.</span><span class="step-t">Search all containers to find any item instantly.</span></div>
+      <div class="step"><span class="step-n">5.</span><span class="step-t">Data is saved locally in your browser automatically.</span></div>
+      <button class="btn sm mt8" onclick="show('menu')">← Back</button>
+    </div>
+  </div>
+
+  <!-- ── WORLDS ── -->
+  <div id="screen-worlds" class="screen">
+    <div class="panel" style="width:min(480px,95vw)">
+      <div class="ptitle">🌍  Select World</div>
+      <div id="worlds-list" style="max-height:52vh;overflow-y:auto;margin-bottom:10px"></div>
+      <div class="flex gap8">
+        <button class="btn green" onclick="openModal('addWorld')">+ New World</button>
+        <button class="btn" onclick="show('menu')">← Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STORAGE ── -->
+  <div id="screen-storage" class="screen" style="justify-content:flex-start;padding-top:52px">
+    <div class="topbar">
+      <button class="btn sm" onclick="show('worlds')">← Worlds</button>
+      <span class="tbtitle" id="storage-title">World</span>
+      <button class="btn sm" onclick="show('search');renderSearch()">🔍 Search</button>
+    </div>
+    <div class="panel" style="width:min(680px,95vw);height:calc(100vh - 68px);display:flex;flex-direction:column">
+      <div class="srow" id="storage-stats"></div>
+      <div class="cgrid" id="container-grid"></div>
+      <div class="mt10">
+        <button class="btn green" onclick="openModal('addContainer')">+ Add Container</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CONTAINER ── -->
+  <div id="screen-container" class="screen" style="justify-content:flex-start;padding-top:52px">
+    <div class="topbar">
+      <button class="btn sm" onclick="show('storage');renderStorage()">← Storage</button>
+      <span class="tbtitle" id="cont-title">Container</span>
+      <span id="cont-slots" class="f6 dim" style="flex-shrink:0"></span>
+    </div>
+    <div class="panel" style="width:min(620px,95vw);height:calc(100vh - 68px);display:flex;flex-direction:column;overflow-y:auto">
+      <div id="cont-header" style="display:flex;align-items:center;gap:10px;margin-bottom:10px"></div>
+      <div class="f7 dim" style="margin-bottom:4px">Inventory</div>
+      <div class="invgrid" id="inv-grid"></div>
+      <div id="contents-section" style="display:none">
+        <div class="f7 dim" style="margin:10px 0 4px">Contents</div>
+        <div id="contents-list" style="max-height:180px;overflow-y:auto"></div>
+      </div>
+      <div id="cont-empty" style="text-align:center;padding:16px;font-size:7px;color:#555">Container is empty — add items with +</div>
+      <div class="flex gap8 mt10">
+        <button class="btn green" onclick="openModal('addItem');renderItemPicker()">+ Add Item</button>
+        <button class="btn red" id="btn-remove" onclick="openModal('removeItem');renderRemoveList()">− Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SEARCH ── -->
+  <div id="screen-search" class="screen" style="justify-content:flex-start;padding-top:52px">
+    <div class="topbar">
+      <button class="btn sm" onclick="show('storage')">← Storage</button>
+      <span class="tbtitle">🔍 Search Items</span>
+    </div>
+    <div class="panel" style="width:min(600px,95vw);height:calc(100vh - 68px);display:flex;flex-direction:column">
+      <input class="inp" id="gsearch-inp" placeholder="Search items across all containers..." oninput="renderSearch()" style="margin-bottom:10px"/>
+      <div id="search-results" style="flex:1;overflow-y:auto">
+        <div style="text-align:center;padding:24px;font-size:7px;color:#555">Type at least 2 characters</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── MODALS ── -->
+
+<!-- Add World -->
+<div id="modal-addWorld" class="mbg" onclick="closeModal('addWorld')">
+  <div class="panel modal" onclick="event.stopPropagation()">
+    <div class="mh">
+      <span class="f7 gold">🌍 New World</span>
+      <button class="btn sm" onclick="closeModal('addWorld')">✕</button>
+    </div>
+    <input class="inp" id="new-world-name" placeholder="World name (e.g. Survival S1)"
+      onkeydown="if(event.key==='Enter')doCreateWorld()" style="margin-bottom:10px"/>
+    <button class="btn green" onclick="doCreateWorld()">Create World</button>
+  </div>
+</div>
+
+<!-- Add Container -->
+<div id="modal-addContainer" class="mbg" onclick="closeModal('addContainer')">
+  <div class="panel modal" onclick="event.stopPropagation()">
+    <div class="mh">
+      <span class="f7 gold">📦 Add Container</span>
+      <button class="btn sm" onclick="closeModal('addContainer')">✕</button>
+    </div>
+    <input class="inp" id="new-cont-name" placeholder="Custom name (optional)" style="margin-bottom:10px"/>
+    <div class="f7 dim" style="margin-bottom:6px">Select type:</div>
+    <div class="cpick" id="cont-picker"></div>
+    <div class="mt10">
+      <button class="btn green" onclick="doAddContainer()">Add Container</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Item -->
+<div id="modal-addItem" class="mbg" onclick="closeModal('addItem')">
+  <div class="panel modal" onclick="event.stopPropagation()">
+    <div class="mh">
+      <span class="f7 gold">+ Add Item</span>
+      <button class="btn sm" onclick="closeModal('addItem')">✕</button>
+    </div>
+    <input class="inp" id="item-search-inp" placeholder="Search items..." oninput="renderItemPicker()" style="margin-bottom:8px"/>
+    <div class="cats" id="item-cats"></div>
+    <div class="ipick" id="item-picker"></div>
+    <div id="qty-row" style="display:none;margin-top:8px">
+      <div class="flex gap8" style="align-items:center">
+        <span class="f7 dim" style="flex-shrink:0">QTY:</span>
+        <input class="inp" id="item-qty-inp" placeholder="64  or  4×64  or  2 stacks+8"
+          onkeydown="if(event.key==='Enter')doAddItem()"/>
+        <button class="btn green sm" onclick="doAddItem()" style="width:auto;padding:5px 12px;flex-shrink:0">Add</button>
+      </div>
+    </div>
+    <div id="item-sel-hint" class="f6" style="color:#555;text-align:center;margin-top:8px">Select an item above</div>
+  </div>
+</div>
+
+<!-- Remove Item -->
+<div id="modal-removeItem" class="mbg" onclick="closeModal('removeItem')">
+  <div class="panel modal" onclick="event.stopPropagation()">
+    <div class="mh">
+      <span class="f7 gold">− Remove Item</span>
+      <button class="btn sm" onclick="closeModal('removeItem')">✕</button>
+    </div>
+    <input class="inp" id="rm-search-inp" placeholder="Filter..." oninput="renderRemoveList()" style="margin-bottom:8px"/>
+    <div id="remove-list" style="max-height:220px;overflow-y:auto"></div>
+    <div id="rm-qty-row" style="display:none;margin-top:8px">
+      <div class="flex gap8" style="align-items:center">
+        <span class="f7 dim" style="flex-shrink:0">REMOVE:</span>
+        <input class="inp" id="rm-qty-inp" value="1" onkeydown="if(event.key==='Enter')doRemoveItem()"/>
+        <button class="btn red sm" onclick="doRemoveItem()" style="width:auto;padding:5px 12px;flex-shrink:0">Remove</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── Texture Engine ────────────────────────────────────────────────────────────
+const T = {
+  __:[0,0,0,0],
+  gA:[89,160,45,255],gB:[71,132,30,255],gC:[107,178,58,255],gD:[55,105,20,255],
+  dA:[134,96,67,255],dB:[109,74,47,255],dC:[152,112,78,255],dD:[88,58,34,255],
+  sA:[125,125,125,255],sB:[100,100,100,255],sC:[145,145,145,255],
+  cA:[118,118,118,255],cB:[80,80,80,255],cC:[148,148,148,255],cD:[55,55,55,255],
+  lA:[155,110,72,255],lB:[120,80,45,255],lC:[175,130,90,255],
+  pA:[196,157,75,255],pB:[162,120,48,255],pC:[218,175,95,255],pD:[138,95,32,255],
+  IA:[67,205,210,255],IB:[28,180,188,255],IC:[100,228,235,255],ID:[12,145,152,255],
+  iA:[195,195,195,255],iB:[155,155,155,255],iC:[220,220,220,255],iD:[120,120,120,255],
+  gE:[242,200,50,255],gF:[205,155,20,255],gG:[255,225,95,255],gH:[170,120,5,255],
+  nA:[72,56,56,255],nB:[42,30,30,255],nC:[102,78,78,255],nD:[132,98,98,255],
+  eA:[22,200,88,255],eB:[12,165,60,255],eC:[55,228,108,255],eD:[5,120,35,255],
+  rA:[225,15,15,255],rB:[180,5,5,255],rC:[255,60,60,255],
+  kA:[30,30,30,255],kB:[18,18,18,255],kC:[50,50,50,255],
+  aA:[152,90,215,255],aB:[112,62,180,255],aC:[190,138,248,255],aD:[80,40,148,255],
+  bA:[245,185,25,255],bB:[208,140,5,255],bC:[255,210,60,255],
+  eE:[35,120,75,255],eF:[22,85,50,255],eG:[48,158,100,255],
+  arA:[132,103,25,255],arB:[88,62,10,255],arC:[200,195,175,255],
+  brA:[196,142,40,255],brB:[156,100,18,255],brC:[225,178,68,255],
+  apA:[185,15,15,255],apB:[148,5,5,255],apC:[105,138,5,255],
+  obA:[22,12,38,255],obB:[10,8,22,255],obC:[36,18,58,255],
+  cuA:[215,120,80,255],cuB:[178,88,50,255],cuC:[238,148,108,255],
+  boA:[232,232,215,255],boB:[196,196,178,255],
+  slA:[90,165,58,255],slB:[62,125,38,255],slC:[118,198,82,255],
+  nsA:[240,240,240,255],nsB:[255,215,0,255],nsC:[255,255,255,255],
+  nhA:[138,35,35,255],nhB:[105,22,22,255],nhC:[165,50,50,255],
+  wA:[180,135,70,255],wB:[145,100,42,255],wC:[205,162,98,255],wD:[118,78,28,255],
+  chL:[200,160,32,255],chM:[160,120,12,255],
+  ecA:[15,28,35,255],ecB:[8,18,25,255],ecC:[22,42,55,255],ecF:[28,90,110,255],
+  shA:[140,90,165,255],shB:[100,60,128,255],shC:[175,125,200,255],
+  hoA:[108,108,108,255],hoB:[78,78,78,255],hoC:[138,138,138,255],
+  baA:[148,108,65,255],baB:[112,78,38,255],baC:[178,140,92,255],
+  sdA:[218,202,145,255],sdB:[195,178,118,255],sdC:[238,222,168,255],
+  grA:[152,140,130,255],grB:[118,108,98,255],grC:[178,165,155,255],
+  dsA:[88,88,100,255],dsB:[65,65,78,255],dsC:[108,108,122,255],
+  bsA:[38,32,48,255],bsB:[25,20,35,255],bsC:[52,44,65,255],
+  msA:[92,112,48,255],msB:[68,85,32,255],msC:[115,138,62,255],
+  esA:[220,215,148,255],esB:[185,178,115,255],esC:[242,238,172,255],
+  gaA:[252,215,60,255],gaB:[208,165,22,255],
+  trA:[180,30,30,255],trB:[140,20,20,255],trC:[210,60,60,255],
+};
+
+// 16×16 textures: 16 rows, each row = 16 two- or three-char palette keys concatenated
+const TEX = {
+  grass_block:[
+    'gAgBgCgAgDgBgAgCgBgDgAgBgCgAgBgD',
+    'gBgDgAgCgBgAgCgDgAgBgCgAgBgDgCgA',
+    'gCgAgBgDgCgBgAgDgCgBgAgDgCgBgCgB',
+    'dAdBdCdAdBdDdAdCdBdAdDdBdCdAdBdD',
+    'dBdAdDdCdBdAdCdDdBdCdAdBdDdCdAdB',
+    'dCdDdAdBdCdAdBdDdCdAdBdDdCdBdAdC',
+    'dDdAdCdBdDdCdAdBdDdBdAdCdBdDdCdB',
+    'dAdCdBdDdAdBdCdAdBdCdDdAdBdCdAdD',
+    'dBdAdCdAdBdDdAdCdBdAdDdBdCdAdBdD',
+    'dCdBdAdDdCdAdBdCdAdBdCdDdAdBdCdA',
+    'dDdAdCdBdDdCdAdBdDdBdAdCdBdDdCdB',
+    'dAdBdDdCdAdBdDdAdCdBdAdCdDdAdBdC',
+    'dBdCdAdBdCdDdBdAdCdBdAdDdBdCdAdB',
+    'dCdAdBdDdAdCdBdDdAdCdBdDdAdCdBdD',
+    'dDdBdCdAdCdBdAdDdBdCdAdBdDdCdBdA',
+    'dAdCdDdBdAdDdCdBdAdDdCdBdAdDdCdB',
+  ],
+  stone:[
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+    'sAsAsAsAsAsAsAsAsAsAsAsAsAsAsAsA',
+  ],
+  cobblestone:[
+    'cAcBcAcAcBcDcAcAcBcAcAcBcDcAcAcB',
+    'cAcCcAcCcAcAcAcCcAcAcCcAcAcAcCcA',
+    'cBcAdBcAcBcDcBcBcAcDcBcAcBcDcBcB',
+    'cAcAcBcAcDcAcBcAcAcBcAcDcAcBcAcA',
+    'cDcBcAcBcAcBcAcDcDcBcAcBcAcBcAcD',
+    'cAcAcCcAcAcAcCcAcAcCcAcAcAcCcAcA',
+    'cBcDcBcAcBcDcBcAcBcDcBcAcBcDcBcA',
+    'cAcAcAcBcAcAcAcBcAcAcAcBcAcAcAcB',
+    'cCcAcDcAcCcAcDcAcCcAcDcAcCcAcDcA',
+    'cAcBcAcAcAcBcAcAcAcBcAcAcAcBcAcA',
+    'cDcAcBcDcDcAcBcDcDcAcBcDcDcAcBcD',
+    'cAcAcAcBcAcAcAcBcAcAcAcBcAcAcAcB',
+    'cBcCcAcAcBcCcAcAcBcCcAcAcBcCcAcA',
+    'cAcAcDcBcAcAcDcBcAcAcDcBcAcAcDcB',
+    'cAcBcAcAcAcBcAcAcAcBcAcAcAcBcAcA',
+    'cDcAcCcAcDcAcCcAcDcAcCcAcDcAcCcA',
+  ],
+  oak_log:[
+    'lAlBlAlClAlBlAlAlBlAlClAlBlAlAlB',
+    'lBlAlClAlBlAlClBlAlClAlBlAlClBlA',
+    'lAlClAlBlAlClAlAlClAlBlAlClAlAlC',
+    'lClAlBlAlClAlBlClAlBlAlClAlBlClA',
+    'lAlBlAlClAlBlAlAlBlAlClAlBlAlAlB',
+    'lBlAlClAlBlAlClBlAlClAlBlAlClBlA',
+    'lAlClAlBlAlClAlAlClAlBlAlClAlAlC',
+    'lClAlBlAlClAlBlClAlBlAlClAlBlClA',
+    'lAlBlAlClAlBlAlAlBlAlClAlBlAlAlB',
+    'lBlAlClAlBlAlClBlAlClAlBlAlClBlA',
+    'lAlClAlBlAlClAlAlClAlBlAlClAlAlC',
+    'lClAlBlAlClAlBlClAlBlAlClAlBlClA',
+    'lAlBlAlClAlBlAlAlBlAlClAlBlAlAlB',
+    'lBlAlClAlBlAlClBlAlClAlBlAlClBlA',
+    'lAlClAlBlAlClAlAlClAlBlAlClAlAlC',
+    'lClAlBlAlClAlBlClAlBlAlClAlBlClA',
+  ],
+  oak_planks:[
+    'pApBpApCpApBpApApBpApCpApBpApApB',
+    'pBpApCpApBpApCpBpApCpApBpApCpBpA',
+    'pApCpApBpApCpApApCpApBpApCpApApC',
+    'pCpApBpApCpApBpCpApBpApCpApBpCpA',
+    'pDpDpDpDpDpDpDpDpDpDpDpDpDpDpDpD',
+    'pApBpApCpApBpApApBpApCpApBpApApB',
+    'pBpApCpApBpApCpBpApCpApBpApCpBpA',
+    'pApCpApBpApCpApApCpApBpApCpApApC',
+    'pCpApBpApCpApBpCpApBpApCpApBpCpA',
+    'pDpDpDpDpDpDpDpDpDpDpDpDpDpDpDpD',
+    'pApBpApCpApBpApApBpApCpApBpApApB',
+    'pBpApCpApBpApCpBpApCpApBpApCpBpA',
+    'pApCpApBpApCpApApCpApBpApCpApApC',
+    'pCpApBpApCpApBpCpApBpApCpApBpCpA',
+    'pDpDpDpDpDpDpDpDpDpDpDpDpDpDpDpD',
+    'pApBpApCpApBpApApBpApCpApBpApApB',
+  ],
+  diamond:[
+    '________________',
+    '______IAIBIB____',
+    '____IAIBIBICIB__',
+    '____IBIBICICIB__',
+    '__IBIBICICIDIDIB',
+    '__IBICICIDIDID__',
+    '__IBIDIDIDID____',
+    '____IDIDIDIDIB__',
+    '____IDIDIDIB____',
+    '______IDIDIB____',
+    '______IBIB______',
+    '______IBIB______',
+    '________IB______',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  iron_ingot:[
+    '________________',
+    '________________',
+    '__iAiAiAiAiAiA__',
+    '__iAiCiCiCiAiA__',
+    '__iAiCiCiCiAiA__',
+    '__iAiAiAiAiAiA__',
+    '____iAiAiAiA____',
+    '____iBiBiBiB____',
+    '____iBiBiBiB____',
+    '__iBiBiBiBiBiB__',
+    '__iBiBiBiBiBiB__',
+    '__iBiBiBiBiBiB__',
+    '__iDiDiDiDiDiD__',
+    '__iDiDiDiDiDiD__',
+    '________________',
+    '________________',
+  ],
+  gold_ingot:[
+    '________________',
+    '________________',
+    '__gEgEgEgEgEgE__',
+    '__gEgGgGgGgEgE__',
+    '__gEgGgGgGgEgE__',
+    '__gEgEgEgEgEgE__',
+    '____gEgEgEgE____',
+    '____gFgFgFgF____',
+    '____gFgFgFgF____',
+    '__gFgFgFgFgFgF__',
+    '__gFgFgFgFgFgF__',
+    '__gFgFgFgFgFgF__',
+    '__gHgHgHgHgHgH__',
+    '__gHgHgHgHgHgH__',
+    '________________',
+    '________________',
+  ],
+  netherite_ingot:[
+    '________________',
+    '________________',
+    '__nAnAnAnAnAnA__',
+    '__nAnCnCnCnAnA__',
+    '__nAnCnDnCnAnA__',
+    '__nAnAnAnAnAnA__',
+    '____nAnAnAnA____',
+    '____nBnBnBnB____',
+    '____nBnBnBnB____',
+    '__nBnBnBnBnBnB__',
+    '__nBnBnBnBnBnB__',
+    '__nBnBnBnBnBnB__',
+    '__nBnBnBnBnBnB__',
+    '__nBnBnBnBnBnB__',
+    '________________',
+    '________________',
+  ],
+  emerald:[
+    '________________',
+    '____eBeBeBeb____',
+    '____eBeAeAeBeB__',
+    '__eBeAeAeAeAeB__',
+    '__eBeBeBeBeBEB__',
+    'eBeAeAeAeAeAeBeB',
+    'eBeAeAeAeAeAeAeB',
+    '__eBeBeBeBeBEB__',
+    '__eBeBeBeBEB____',
+    '____eDeDeDe_____',
+    '____eDeDeDe_____',
+    '______eDeD______',
+    '______eD________',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  redstone:[
+    '________________',
+    '________________',
+    '________________',
+    '______rArB______',
+    '____rArBrBrA____',
+    '__rBrArArBrArB__',
+    'rBrArBrCrBrArBrA',
+    'rArBrCrBrArBrBrA',
+    '__rBrArArBrArB__',
+    '____rBrBrArA____',
+    '______rBrB______',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  coal:[
+    '________________',
+    '________________',
+    '__kAkAkAkAkAkA__',
+    '__kAkBkCkBkBkA__',
+    '__kAkCkBkCkBkA__',
+    '__kAkBkCkBkCkA__',
+    '__kAkAkAkAkAkA__',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  amethyst_shard:[
+    '________aA______',
+    '______aAaBaA____',
+    '____aAaCaCaAaA__',
+    '__aAaAaCaAaAaAaA',
+    '__aAaCaAaDaDaAaA',
+    '__aDaDaDaDaDaDaD',
+    '____aDaDaDaDaD__',
+    '______aDaDaD____',
+    '________aD______',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  blaze_rod:[
+    '______bA________',
+    '____bAbBbA______',
+    '____bCbAbB______',
+    '______bAbCbA____',
+    '________bBbAbC__',
+    '________bAbCbA__',
+    '__________bBbA__',
+    '__________bAbC__',
+    '____________bBbA',
+    '____________bAbC',
+    '______________bA',
+    '______________bB',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  ender_pearl:[
+    '________________',
+    '____eEeFeE______',
+    '__eEeGeGeEeE____',
+    '__eFeGeGeGeEeF__',
+    '__eFeGeGeGeGeF__',
+    'eEeGeGeGeGeGeEeE',
+    'eFeGeGeGeGeGeEeF',
+    '__eGeGeGeGeGeF__',
+    '__eGeGeGeGeGEF__',
+    '__eEeEeGeGeE____',
+    '____eFeEeFeF____',
+    '______eEeE______',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  arrow:[
+    '________________',
+    '__arC___________',
+    '__arCarA________',
+    '____arAarB______',
+    '______arBarA____',
+    '________arAarB__',
+    '__________arBarA',
+    '____________arBa',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  bread:[
+    '________________',
+    '________________',
+    '__brCbrAbrCbrA__',
+    '__brAbrCbrAbrC__',
+    '__brCbrBbrAbrC__',
+    'brAbrCbrBbrCbrAb',
+    'brCbrAbrCbrAbrCb',
+    'brAbrBbrAbrBbrAb',
+    '__brCbrAbrCbrA__',
+    '__brBbrCbrBbrC__',
+    '__brAbrBbrAbrB__',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  apple:[
+    '______apC_______',
+    '________apC_____',
+    '____apBapAapBapA',
+    '__apBapAapAapAapB',
+    '__apBapAapAapAapB',
+    'apBapAapAapAapAapB',
+    'apBapAapAapAapAapB',
+    '__apBapAapAapAapB',
+    '__apBapAapAapAapB',
+    '____apBapAapBapA',
+    '______apBapB____',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  obsidian:[
+    'obAobBobAobBobAobBobAobBobAobBobA',
+    'obBobAobCobAobBobAobCobAobBobAobC',
+    'obAobCobBobAobBobCobBobAobBobCobB',
+    'obBobAobCobBobAobCobBobAobCobBobA',
+    'obAobBobAobCobBobAobCobBobAobCobB',
+    'obCobAobBobAobBobAobBobAobBobAobB',
+    'obAobCobAobBobAobCobAobBobAobCobA',
+    'obBobAobCobAobBobAobCobAobBobAobC',
+    'obAobBobAobBobAobBobAobBobAobBobA',
+    'obCobBobAobBobCobBobAobBobCobBobA',
+    'obAobCobBobAobBobCobBobAobBobCobB',
+    'obBobAobCobBobAobCobBobAobCobBobA',
+    'obAobBobAobCobBobAobCobBobAobCobB',
+    'obCobAobBobAobBobAobBobAobBobAobB',
+    'obAobCobAobBobAobCobAobBobAobCobA',
+    'obBobAobBobAobBobAobBobAobBobAobB',
+  ],
+  copper_ingot:[
+    '________________',
+    '________________',
+    '__cuAcuAcuAcuA__',
+    '__cuAcuCcuCcuA__',
+    '__cuAcuCcuCcuA__',
+    '__cuAcuAcuAcuA__',
+    '____cuAcuAcuA___',
+    '____cuBcuBcuB___',
+    '____cuBcuBcuB___',
+    '__cuBcuBcuBcuB__',
+    '__cuBcuBcuBcuB__',
+    '__cuBcuBcuBcuB__',
+    '__cuBcuBcuBcuB__',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  bone:[
+    '____boAboA______',
+    '__boAboAboAboA__',
+    '__boAboAboAboA__',
+    '____boAboA______',
+    '______boA_______',
+    '__________boA___',
+    '____________boA_',
+    '____________boAb',
+    '___________boBo_',
+    '_______boBoboBo_',
+    '__boBoboBo______',
+    '__boBobo________',
+    '__boBoboB_______',
+    '__boBo__________',
+    '________________',
+    '________________',
+  ],
+  slimeball:[
+    '________________',
+    '________________',
+    '____slBslAslBslA',
+    '__slBslAslCslAslB',
+    '__slAslCslAslCslA',
+    '__slBslAslCslAslB',
+    '__slAslCslAslCslA',
+    '____slBslAslBslA',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  nether_star:[
+    '______nsB_______',
+    '____nsAnsAnsB___',
+    '____nsAnsAnsA___',
+    '__nsAnsAnsAnsAnsA',
+    'nsAnsAnsAnsAnsAnsA',
+    '__nsAnsAnsAnsAnsA',
+    '____nsAnsAnsA___',
+    '____nsAnsAnsB___',
+    '______nsC_______',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  netherrack:[
+    'nhAnhBnhAnhCnhAnhBnhAnhCnhAnhBnhA',
+    'nhCnhAnhBnhAnhCnhAnhBnhAnhCnhAnhB',
+    'nhAnhCnhAnhBnhAnhCnhAnhBnhAnhCnhA',
+    'nhBnhAnhCnhAnhBnhAnhCnhAnhBnhAnhC',
+    'nhAnhBnhAnhCnhAnhBnhAnhCnhAnhBnhA',
+    'nhCnhAnhBnhAnhCnhAnhBnhAnhCnhAnhB',
+    'nhAnhCnhAnhBnhAnhCnhAnhBnhAnhCnhA',
+    'nhBnhAnhCnhAnhBnhAnhCnhAnhBnhAnhC',
+    'nhAnhBnhAnhCnhAnhBnhAnhCnhAnhBnhA',
+    'nhCnhAnhBnhAnhCnhAnhBnhAnhCnhAnhB',
+    'nhAnhCnhAnhBnhAnhCnhAnhBnhAnhCnhA',
+    'nhBnhAnhCnhAnhBnhAnhCnhAnhBnhAnhC',
+    'nhAnhBnhAnhCnhAnhBnhAnhCnhAnhBnhA',
+    'nhCnhAnhBnhAnhCnhAnhBnhAnhCnhAnhB',
+    'nhAnhCnhAnhBnhAnhCnhAnhBnhAnhCnhA',
+    'nhBnhAnhCnhAnhBnhAnhCnhAnhBnhAnhC',
+  ],
+  dirt:[
+    'dAdBdCdAdBdDdAdCdBdAdDdBdCdAdBdD',
+    'dBdAdDdCdBdAdCdDdBdCdAdBdDdCdAdB',
+    'dCdDdAdBdCdAdBdDdCdAdBdDdCdBdAdC',
+    'dAdCdBdDdAdBdCdAdBdCdDdAdBdCdDdA',
+    'dBdAdCdAdBdDdAdCdBdAdDdBdCdAdBdD',
+    'dCdBdAdDdCdAdBdCdAdBdCdDdAdBdAdC',
+    'dDdAdCdBdDdCdAdBdDdBdAdCdBdDdCdB',
+    'dAdBdDdCdAdBdDdAdCdBdAdCdDdAdBdC',
+    'dBdCdAdBdCdDdBdAdCdBdAdDdBdCdAdB',
+    'dCdAdBdDdAdCdBdDdAdCdBdDdAdCdBdD',
+    'dDdBdCdAdCdBdAdDdBdCdAdBdDdCdAdC',
+    'dAdCdDdBdAdDdCdBdAdDdCdBdAdDdCdB',
+    'dBdAdCdDdBdAdDdCdBdAdDdCdBdAdDdC',
+    'dCdBdAdCdDdBdAdCdDdBdAdCdDdBdAdC',
+    'dDdCdBdAdDdCdBdAdDdCdBdAdDdCdBdA',
+    'dAdDdCdBdAdDdCdBdAdDdCdBdAdDdCdB',
+  ],
+  sand:[
+    'sdAsdBsdCsdAsdBsdCsdAsdBsdCsdAsdB',
+    'sdBsdCsdAsdBsdCsdAsdBsdCsdAsdBsdC',
+    'sdCsdAsdBsdCsdAsdBsdCsdAsdBsdCsdA',
+    'sdAsdBsdCsdAsdBsdCsdAsdBsdCsdAsdB',
+    'sdBsdCsdAsdBsdCsdAsdBsdCsdAsdBsdC',
+    'sdCsdAsdBsdCsdAsdBsdCsdAsdBsdCsdA',
+    'sdAsdBsdCsdAsdBsdCsdAsdBsdCsdAsdB',
+    'sdBsdCsdAsdBsdCsdAsdBsdCsdAsdBsdC',
+    'sdCsdAsdBsdCsdAsdBsdCsdAsdBsdCsdA',
+    'sdAsdBsdCsdAsdBsdCsdAsdBsdCsdAsdB',
+    'sdBsdCsdAsdBsdCsdAsdBsdCsdAsdBsdC',
+    'sdCsdAsdBsdCsdAsdBsdCsdAsdBsdCsdA',
+    'sdAsdBsdCsdAsdBsdCsdAsdBsdCsdAsdB',
+    'sdBsdCsdAsdBsdCsdAsdBsdCsdAsdBsdC',
+    'sdCsdAsdBsdCsdAsdBsdCsdAsdBsdCsdA',
+    'sdAsdBsdCsdAsdBsdCsdAsdBsdCsdAsdB',
+  ],
+  deepslate:[
+    'dsAdsBdsCdsAdsBdsCdsAdsBdsCdsAdsB',
+    'dsBdsCdsAdsBdsCdsAdsBdsCdsAdsBdsC',
+    'dsCdsAdsBdsCdsAdsBdsCdsAdsBdsCdsA',
+    'dsAdsBdsCdsAdsBdsCdsAdsBdsCdsAdsB',
+    'dsBdsCdsAdsBdsCdsAdsBdsCdsAdsBdsC',
+    'dsCdsAdsBdsCdsAdsBdsCdsAdsBdsCdsA',
+    'dsAdsBdsCdsAdsBdsCdsAdsBdsCdsAdsB',
+    'dsBdsCdsAdsBdsCdsAdsBdsCdsAdsBdsC',
+    'dsCdsAdsBdsCdsAdsBdsCdsAdsBdsCdsA',
+    'dsAdsBdsCdsAdsBdsCdsAdsBdsCdsAdsB',
+    'dsBdsCdsAdsBdsCdsAdsBdsCdsAdsBdsC',
+    'dsCdsAdsBdsCdsAdsBdsCdsAdsBdsCdsA',
+    'dsAdsBdsCdsAdsBdsCdsAdsBdsCdsAdsB',
+    'dsBdsCdsAdsBdsCdsAdsBdsCdsAdsBdsC',
+    'dsCdsAdsBdsCdsAdsBdsCdsAdsBdsCdsA',
+    'dsAdsBdsCdsAdsBdsCdsAdsBdsCdsAdsB',
+  ],
+  blackstone:[
+    'bsAbsBbsCbsAbsBbsCbsAbsBbsCbsAbsB',
+    'bsBbsCbsAbsBbsCbsAbsBbsCbsAbsBbsC',
+    'bsCbsAbsBbsCbsAbsBbsCbsAbsBbsCbsA',
+    'bsAbsBbsCbsAbsBbsCbsAbsBbsCbsAbsB',
+    'bsBbsCbsAbsBbsCbsAbsBbsCbsAbsBbsC',
+    'bsCbsAbsBbsCbsAbsBbsCbsAbsBbsCbsA',
+    'bsAbsBbsCbsAbsBbsCbsAbsBbsCbsAbsB',
+    'bsBbsCbsAbsBbsCbsAbsBbsCbsAbsBbsC',
+    'bsCbsAbsBbsCbsAbsBbsCbsAbsBbsCbsA',
+    'bsAbsBbsCbsAbsBbsCbsAbsBbsCbsAbsB',
+    'bsBbsCbsAbsBbsCbsAbsBbsCbsAbsBbsC',
+    'bsCbsAbsBbsCbsAbsBbsCbsAbsBbsCbsA',
+    'bsAbsBbsCbsAbsBbsCbsAbsBbsCbsAbsB',
+    'bsBbsCbsAbsBbsCbsAbsBbsCbsAbsBbsC',
+    'bsCbsAbsBbsCbsAbsBbsCbsAbsBbsCbsA',
+    'bsAbsBbsCbsAbsBbsCbsAbsBbsCbsAbsB',
+  ],
+  moss_block:[
+    'msAmsAmsBmsAmsAmsBmsAmsAmsBmsAmsA',
+    'msAmsAmsBmsCmsAmsAmsBmsCmsAmsAmsB',
+    'msBmsAmsCmsAmsAmsBmsCmsAmsAmsBmsC',
+    'msAmsCmsAmsAmsBmsCmsAmsAmsBmsCmsA',
+    'msAmsAmsBmsCmsAmsAmsBmsCmsAmsAmsB',
+    'msBmsCmsAmsAmsBmsCmsAmsAmsBmsCmsA',
+    'msAmsCmsAmsBmsCmsAmsAmsBmsCmsAmsA',
+    'msBmsAmsCmsAmsAmsBmsCmsAmsAmsBmsC',
+    'msAmsBmsCmsAmsAmsBmsCmsAmsAmsBmsC',
+    'msCmsAmsAmsBmsCmsAmsAmsBmsCmsAmsA',
+    'msAmsAmsBmsCmsAmsAmsBmsCmsAmsAmsB',
+    'msBmsCmsAmsAmsBmsCmsAmsAmsBmsCmsA',
+    'msAmsCmsAmsBmsCmsAmsAmsBmsCmsAmsA',
+    'msBmsAmsCmsAmsAmsBmsCmsAmsAmsBmsC',
+    'msAmsBmsCmsAmsAmsBmsCmsAmsAmsBmsC',
+    'msCmsAmsAmsBmsCmsAmsAmsBmsCmsAmsA',
+  ],
+  end_stone:[
+    'esAesBesAesCesAesBesAesCesAesBesA',
+    'esBesAesCesAesBesAesCesAesBesAesC',
+    'esAesCesAesBesAesCesAesBesAesCesA',
+    'esCesAesBesAesCesAesBesAesCesAesB',
+    'esAesBesAesCesAesBesAesCesAesBesA',
+    'esBesAesCesAesBesAesCesAesBesAesC',
+    'esAesCesAesBesAesCesAesBesAesCesA',
+    'esCesAesBesAesCesAesBesAesCesAesB',
+    'esAesBesAesCesAesBesAesCesAesBesA',
+    'esBesAesCesAesBesAesCesAesBesAesC',
+    'esAesCesAesBesAesCesAesBesAesCesA',
+    'esCesAesBesAesCesAesBesAesCesAesB',
+    'esAesBesAesCesAesBesAesCesAesBesA',
+    'esBesAesCesAesBesAesCesAesBesAesC',
+    'esAesCesAesBesAesCesAesBesAesCesA',
+    'esCesAesBesAesCesAesBesAesCesAesB',
+  ],
+  chest:[
+    'wDwAwDwAwDwAwDwAwDwAwDwAwDwAwDwA',
+    'wAwBwCwBwCwBwCwBwCwBwCwBwCwBwAwB',
+    'wBwCwBwCwBwCwBwCwBwCwBwCwBwCwBwC',
+    'wAwBwCwBwCwBwCwBwCwBwCwBwCwBwAwB',
+    'wBwCchLchMchLchLchMchLchLchMwCwB',
+    'wCwBchMchLchMchMchLchMchMchLwBwC',
+    'wBwCwBwCwBwCwBwCwBwCwBwCwBwCwBwC',
+    'wAwBwCwBwCwBwCwBwCwBwCwBwCwBwAwB',
+    'wBwCwBwCwBwCwBwCwBwCwBwCwBwCwBwC',
+    'wAwBwCwBwCwBwCwBwCwBwCwBwCwBwAwB',
+    'wBwCwBwCwBwCwBwCwBwCwBwCwBwCwBwC',
+    'wAwBwCwBwCwBwCwBwCwBwCwBwCwBwAwB',
+    'wBwCwBwCwBwCwBwCwBwCwBwCwBwCwBwC',
+    'wDwDwDwDwDwDwDwDwDwDwDwDwDwDwDwD',
+    'wDwDwDwDwDwDwDwDwDwDwDwDwDwDwDwD',
+    '________________',
+  ],
+  trapped_chest:[
+    'wDtrBwDtrBwDtrBwDtrBwDtrBwDtrBwD',
+    'trBwBwCwBwCwBwCwBwCwBwCwBwCwBtrB',
+    'wBwCwBwCwBwCwBwCwBwCwBwCwBwCwBwC',
+    'trBwBwCwBwCwBwCwBwCwBwCwBwCwBtrB',
+    'wBwCchLchMchLchLchMchLchLchMwCwB',
+    'wCwBchMchLchMchMchLchMchMchLwBwC',
+    'trBwBwCwBwCwBwCwBwCwBwCwBwCwBtrB',
+    'wBwCwBwCwBwCwBwCwBwCwBwCwBwCwBwC',
+    'trBwBwCwBwCwBwCwBwCwBwCwBwCwBtrB',
+    'wBwCwBwCwBwCwBwCwBwCwBwCwBwCwBwC',
+    'trBwBwCwBwCwBwCwBwCwBwCwBwCwBtrB',
+    'wBwCwBwCwBwCwBwCwBwCwBwCwBwCwBwC',
+    'trBwBwCwBwCwBwCwBwCwBwCwBwCwBtrB',
+    'wDwDwDwDwDwDwDwDwDwDwDwDwDwDwDwD',
+    'wDwDwDwDwDwDwDwDwDwDwDwDwDwDwDwD',
+    '________________',
+  ],
+  ender_chest:[
+    'ecBecAecBecAecBecAecBecAecBecAecB',
+    'ecAecBecCecBecCecBecCecBecCecBecC',
+    'ecBecCecBecCecBecCecBecCecBecCecB',
+    'ecAecBecCecBecCecBecCecBecCecBecC',
+    'ecBecCecFecFecFecFecFecFecFecFecC',
+    'ecCecBecFecFecFecFecFecFecFecFecB',
+    'ecBecCecBecCecBecCecBecCecBecCecB',
+    'ecAecBecCecBecCecBecCecBecCecBecC',
+    'ecBecCecBecCecBecCecBecCecBecCecB',
+    'ecAecBecCecBecCecBecCecBecCecBecC',
+    'ecBecCecBecCecBecCecBecCecBecCecB',
+    'ecAecBecCecBecCecBecCecBecCecBecC',
+    'ecBecCecBecCecBecCecBecCecBecCecB',
+    'ecAecAecAecAecAecAecAecAecAecAecA',
+    '________________',
+    '________________',
+  ],
+  shulker_box:[
+    'shBshAshBshAshBshAshBshAshBshAshB',
+    'shAshBshAshCshAshBshAshCshAshBshA',
+    'shBshAshCshAshBshAshCshAshBshAshC',
+    'shAshCshAshBshAshCshAshBshAshCshA',
+    'shBshAshCshAshBshAshCshAshBshAshC',
+    'shAshBshAshCshAshBshAshCshAshBshA',
+    'shBshAshBshAshBshAshBshAshBshAshB',
+    'shAshBshAshCshAshBshAshCshAshBshA',
+    'shBshAshCshAshBshAshCshAshBshAshC',
+    'shAshCshAshBshAshCshAshBshAshCshA',
+    'shBshAshCshAshBshAshCshAshBshAshC',
+    'shAshBshAshCshAshBshAshCshAshBshA',
+    'shBshAshBshAshBshAshBshAshBshAshB',
+    'shBshBshBshBshBshBshBshBshBshBshB',
+    '________________',
+    '________________',
+  ],
+  hopper:[
+    'hoChoAhoBhoChoAhoBhoChoAhoBhoChoA',
+    'hoAhoBhoChoAhoBhoChoAhoBhoChoAhoB',
+    'hoBhoChoAhoBhoChoAhoBhoChoAhoBhoC',
+    'hoChoAhoBhoChoAhoBhoChoAhoBhoChoA',
+    '____hoAhoBhoChoAhoB__________',
+    '______hoBhoChoAhoB______',
+    '________hoChoAhoB____',
+    '__________hoAhoB__',
+    '____________hoB___',
+    '______________hoA',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+    '________________',
+  ],
+  barrel:[
+    'baAbaAbaBbaAbaAbaBbaAbaAbaBbaAbaA',
+    'baAbaBbaAbaAbaBbaAbaAbaBbaAbaAbaB',
+    'baBbaAbaAbaBbaAbaAbaBbaAbaAbaBbaA',
+    'baAbaAbaBbaAbaAbaBbaAbaAbaBbaAbaA',
+    'baAbaAbaBbaAbaAbaBbaAbaAbaBbaAbaA',
+    'baAbaBbaAbaAbaBbaAbaAbaBbaAbaAbaB',
+    'baBbaAbaAbaBbaAbaAbaBbaAbaAbaBbaA',
+    'baAbaAbaBbaAbaAbaBbaAbaAbaBbaAbaA',
+    'baAbaAbaBbaAbaAbaBbaAbaAbaBbaAbaA',
+    'baAbaBbaAbaAbaBbaAbaAbaBbaAbaAbaB',
+    'baBbaAbaAbaBbaAbaAbaBbaAbaAbaBbaA',
+    'baAbaAbaBbaAbaAbaBbaAbaAbaBbaAbaA',
+    'baAbaBbaAbaBbaAbaBbaAbaBbaAbaBbaA',
+    'baAbaAbaBbaAbaAbaBbaAbaAbaBbaAbaA',
+    'baAbaAbaBbaAbaAbaBbaAbaAbaBbaAbaA',
+    'baBbaBbaBbaBbaBbaBbaBbaBbaBbaBbaB',
+  ],
+  gravel:[
+    'grAgrBgrAgrCgrAgrBgrCgrAgrBgrAgrC',
+    'grBgrCgrAgrBgrCgrAgrBgrCgrAgrBgrC',
+    'grCgrAgrBgrCgrAgrBgrCgrAgrBgrCgrA',
+    'grAgrBgrCgrAgrBgrCgrAgrBgrCgrAgrB',
+    'grBgrCgrAgrBgrCgrAgrBgrCgrAgrBgrC',
+    'grCgrAgrBgrCgrAgrBgrCgrAgrBgrCgrA',
+    'grAgrBgrCgrAgrBgrCgrAgrBgrCgrAgrB',
+    'grBgrCgrAgrBgrCgrAgrBgrCgrAgrBgrC',
+    'grCgrAgrBgrCgrAgrBgrCgrAgrBgrCgrA',
+    'grAgrBgrCgrAgrBgrCgrAgrBgrCgrAgrB',
+    'grBgrCgrAgrBgrCgrAgrBgrCgrAgrBgrC',
+    'grCgrAgrBgrCgrAgrBgrCgrAgrBgrCgrA',
+    'grAgrBgrCgrAgrBgrCgrAgrBgrCgrAgrB',
+    'grBgrCgrAgrBgrCgrAgrBgrCgrAgrBgrC',
+    'grCgrAgrBgrCgrAgrBgrCgrAgrBgrCgrA',
+    'grAgrBgrCgrAgrBgrCgrAgrBgrCgrAgrB',
+  ],
+};
+
+// Parse a row string into an array of 16 palette keys
+function parseRow(str){
+  const keys=[];
+  let i=0;
+  while(i<str.length && keys.length<16){
+    if(str[i]==='_'||str[i]===' '){i++;keys.push('__');continue;}
+    // try 3-char
+    let found=false;
+    for(let l=3;l>=2;l--){
+      const c=str.slice(i,i+l);
+      if(T[c]){keys.push(c);i+=l;found=true;break;}
+    }
+    if(!found){keys.push('__');i++;}
+  }
+  while(keys.length<16)keys.push('__');
+  return keys;
+}
+
+const texCache={};
+function getTex(name,size){
+  const k=name+'_'+size;
+  if(texCache[k])return texCache[k];
+  const data=TEX[name];
+  if(!data){texCache[k]=null;return null;}
+  const scale=Math.max(1,Math.ceil(size/16));
+  const c=document.createElement('canvas');
+  c.width=16*scale;c.height=16*scale;
+  const ctx=c.getContext('2d');
+  ctx.imageSmoothingEnabled=false;
+  for(let r=0;r<16;r++){
+    const row=parseRow(data[r]||'');
+    for(let col=0;col<16;col++){
+      const rgba=T[row[col]]||T['__'];
+      if(rgba[3]===0)continue;
+      ctx.fillStyle=`rgba(${rgba[0]},${rgba[1]},${rgba[2]},${rgba[3]/255})`;
+      ctx.fillRect(col*scale,r*scale,scale,scale);
+    }
+  }
+  const url=c.toDataURL();
+  texCache[k]=url;
+  return url;
+}
+
+function makeTexImg(name,size,tint){
+  const wrapper=document.createElement('div');
+  wrapper.style.cssText=`position:relative;width:${size}px;height:${size}px;flex-shrink:0;image-rendering:pixelated`;
+  const url=getTex(name,size);
+  if(url){
+    const img=document.createElement('img');
+    img.src=url;
+    img.style.cssText=`width:${size}px;height:${size}px;image-rendering:pixelated;display:block`;
+    wrapper.appendChild(img);
+    if(tint){
+      const overlay=document.createElement('div');
+      overlay.style.cssText=`position:absolute;inset:0;background:${tint};mix-blend-mode:multiply;opacity:0.55`;
+      wrapper.appendChild(overlay);
+    }
+  } else {
+    wrapper.style.background='#373737';
+  }
+  return wrapper;
+}
+
+// ─── Data ─────────────────────────────────────────────────────────────────────
+const CONTAINERS=[
+  {id:'chest',name:'Chest',slots:27,tex:'chest'},
+  {id:'large_chest',name:'Large Chest',slots:54,tex:'chest'},
+  {id:'trapped_chest',name:'Trapped Chest',slots:27,tex:'trapped_chest'},
+  {id:'large_trapped_chest',name:'Large Trapped Chest',slots:54,tex:'trapped_chest'},
+  {id:'barrel',name:'Barrel',slots:27,tex:'barrel'},
+  {id:'ender_chest',name:'Ender Chest',slots:27,tex:'ender_chest'},
+  {id:'hopper',name:'Hopper',slots:5,tex:'hopper'},
+  {id:'shulker_box',name:'Shulker Box',slots:27,tex:'shulker_box',tint:'#8E5EA2'},
+  {id:'white_shulker_box',name:'White Shulker Box',slots:27,tex:'shulker_box',tint:'#F0F0F0'},
+  {id:'orange_shulker_box',name:'Orange Shulker Box',slots:27,tex:'shulker_box',tint:'#F07820'},
+  {id:'magenta_shulker_box',name:'Magenta Shulker Box',slots:27,tex:'shulker_box',tint:'#B050B0'},
+  {id:'light_blue_shulker_box',name:'Light Blue Shulker Box',slots:27,tex:'shulker_box',tint:'#50A0D0'},
+  {id:'yellow_shulker_box',name:'Yellow Shulker Box',slots:27,tex:'shulker_box',tint:'#F0D000'},
+  {id:'lime_shulker_box',name:'Lime Shulker Box',slots:27,tex:'shulker_box',tint:'#50B030'},
+  {id:'pink_shulker_box',name:'Pink Shulker Box',slots:27,tex:'shulker_box',tint:'#E0709A'},
+  {id:'gray_shulker_box',name:'Gray Shulker Box',slots:27,tex:'shulker_box',tint:'#444444'},
+  {id:'light_gray_shulker_box',name:'Light Gray Shulker Box',slots:27,tex:'shulker_box',tint:'#999999'},
+  {id:'cyan_shulker_box',name:'Cyan Shulker Box',slots:27,tex:'shulker_box',tint:'#158EA0'},
+  {id:'purple_shulker_box',name:'Purple Shulker Box',slots:27,tex:'shulker_box',tint:'#6A2F8B'},
+  {id:'blue_shulker_box',name:'Blue Shulker Box',slots:27,tex:'shulker_box',tint:'#2840A0'},
+  {id:'brown_shulker_box',name:'Brown Shulker Box',slots:27,tex:'shulker_box',tint:'#7B4620'},
+  {id:'green_shulker_box',name:'Green Shulker Box',slots:27,tex:'shulker_box',tint:'#3C6020'},
+  {id:'red_shulker_box',name:'Red Shulker Box',slots:27,tex:'shulker_box',tint:'#8B2020'},
+  {id:'black_shulker_box',name:'Black Shulker Box',slots:27,tex:'shulker_box',tint:'#1A1A1A'},
+];
+
+const ITEMS=[
+  {id:'oak_log',name:'Oak Log',stack:64,cat:'Wood',tex:'oak_log'},
+  {id:'oak_planks',name:'Oak Planks',stack:64,cat:'Wood',tex:'oak_planks'},
+  {id:'stone',name:'Stone',stack:64,cat:'Blocks',tex:'stone'},
+  {id:'cobblestone',name:'Cobblestone',stack:64,cat:'Blocks',tex:'cobblestone'},
+  {id:'dirt',name:'Dirt',stack:64,cat:'Blocks',tex:'dirt'},
+  {id:'sand',name:'Sand',stack:64,cat:'Blocks',tex:'sand'},
+  {id:'gravel',name:'Gravel',stack:64,cat:'Blocks',tex:'gravel'},
+  {id:'obsidian',name:'Obsidian',stack:64,cat:'Blocks',tex:'obsidian'},
+  {id:'netherrack',name:'Netherrack',stack:64,cat:'Blocks',tex:'netherrack'},
+  {id:'deepslate',name:'Deepslate',stack:64,cat:'Blocks',tex:'deepslate'},
+  {id:'blackstone',name:'Blackstone',stack:64,cat:'Blocks',tex:'blackstone'},
+  {id:'moss_block',name:'Moss Block',stack:64,cat:'Blocks',tex:'moss_block'},
+  {id:'end_stone',name:'End Stone',stack:64,cat:'Blocks',tex:'end_stone'},
+  {id:'grass_block',name:'Grass Block',stack:64,cat:'Blocks',tex:'grass_block'},
+  {id:'diamond',name:'Diamond',stack:64,cat:'Gems',tex:'diamond'},
+  {id:'emerald',name:'Emerald',stack:64,cat:'Gems',tex:'emerald'},
+  {id:'amethyst_shard',name:'Amethyst Shard',stack:64,cat:'Gems',tex:'amethyst_shard'},
+  {id:'iron_ingot',name:'Iron Ingot',stack:64,cat:'Ingots',tex:'iron_ingot'},
+  {id:'gold_ingot',name:'Gold Ingot',stack:64,cat:'Ingots',tex:'gold_ingot'},
+  {id:'copper_ingot',name:'Copper Ingot',stack:64,cat:'Ingots',tex:'copper_ingot'},
+  {id:'netherite_ingot',name:'Netherite Ingot',stack:64,cat:'Ingots',tex:'netherite_ingot'},
+  {id:'coal',name:'Coal',stack:64,cat:'Fuel',tex:'coal'},
+  {id:'redstone',name:'Redstone',stack:64,cat:'Redstone',tex:'redstone'},
+  {id:'ender_pearl',name:'Ender Pearl',stack:16,cat:'Misc',tex:'ender_pearl'},
+  {id:'blaze_rod',name:'Blaze Rod',stack:64,cat:'Misc',tex:'blaze_rod'},
+  {id:'bone',name:'Bone',stack:64,cat:'Misc',tex:'bone'},
+  {id:'slimeball',name:'Slimeball',stack:64,cat:'Misc',tex:'slimeball'},
+  {id:'nether_star',name:'Nether Star',stack:64,cat:'Misc',tex:'nether_star'},
+  {id:'arrow',name:'Arrow',stack:64,cat:'Combat',tex:'arrow'},
+  {id:'bread',name:'Bread',stack:64,cat:'Food',tex:'bread'},
+  {id:'apple',name:'Apple',stack:64,cat:'Food',tex:'apple'},
+  {id:'diamond_sword',name:'Diamond Sword',stack:1,cat:'Combat',tex:'diamond'},
+  {id:'iron_sword',name:'Iron Sword',stack:1,cat:'Combat',tex:'iron_ingot'},
+  {id:'diamond_pickaxe',name:'Diamond Pickaxe',stack:1,cat:'Tools',tex:'diamond'},
+  {id:'iron_pickaxe',name:'Iron Pickaxe',stack:1,cat:'Tools',tex:'iron_ingot'},
+  {id:'diamond_helmet',name:'Diamond Helmet',stack:1,cat:'Armor',tex:'diamond'},
+  {id:'netherite_sword',name:'Netherite Sword',stack:1,cat:'Combat',tex:'netherite_ingot'},
+  {id:'netherite_pickaxe',name:'Netherite Pickaxe',stack:1,cat:'Tools',tex:'netherite_ingot'},
+  {id:'elytra',name:'Elytra',stack:1,cat:'Misc',tex:'deepslate'},
+  {id:'totem_of_undying',name:'Totem of Undying',stack:1,cat:'Misc',tex:'gold_ingot'},
+  {id:'cooked_beef',name:'Cooked Beef',stack:64,cat:'Food',tex:'netherrack'},
+  {id:'cooked_chicken',name:'Cooked Chicken',stack:64,cat:'Food',tex:'sand'},
+  {id:'golden_apple',name:'Golden Apple',stack:64,cat:'Food',tex:'gold_ingot'},
+  {id:'carrot',name:'Carrot',stack:64,cat:'Food',tex:'netherrack'},
+  {id:'potato',name:'Potato',stack:64,cat:'Food',tex:'dirt'},
+  {id:'string',name:'String',stack:64,cat:'Misc',tex:'stone'},
+  {id:'feather',name:'Feather',stack:64,cat:'Misc',tex:'stone'},
+  {id:'leather',name:'Leather',stack:64,cat:'Misc',tex:'dirt'},
+  {id:'blaze_powder',name:'Blaze Powder',stack:64,cat:'Misc',tex:'blaze_rod'},
+  {id:'magma_cream',name:'Magma Cream',stack:64,cat:'Misc',tex:'netherrack'},
+  {id:'comparator',name:'Comparator',stack:64,cat:'Redstone',tex:'stone'},
+  {id:'repeater',name:'Repeater',stack:64,cat:'Redstone',tex:'stone'},
+  {id:'observer',name:'Observer',stack:64,cat:'Redstone',tex:'deepslate'},
+  {id:'piston',name:'Piston',stack:64,cat:'Redstone',tex:'oak_planks'},
+  {id:'sticky_piston',name:'Sticky Piston',stack:64,cat:'Redstone',tex:'slimeball'},
+  {id:'iron_ore',name:'Iron Ore',stack:64,cat:'Ores',tex:'stone'},
+  {id:'gold_ore',name:'Gold Ore',stack:64,cat:'Ores',tex:'stone'},
+  {id:'diamond_ore',name:'Diamond Ore',stack:64,cat:'Ores',tex:'stone'},
+  {id:'coal_ore',name:'Coal Ore',stack:64,cat:'Ores',tex:'stone'},
+];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const SK='mc_tracker_v3';
+let state;
+try{state=JSON.parse(localStorage.getItem(SK))||{worlds:[]};}
+catch{state={worlds:[]};}
+function persist(){localStorage.setItem(SK,JSON.stringify(state));}
+
+let activeWorldId=null;
+let activeContId=null;
+let selContType='chest';
+let selItemId=null;
+let selRmItemId=null;
+let itemCat='All';
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function uid(){return Math.random().toString(36).slice(2,9);}
+function getWorld(){return state.worlds.find(w=>w.id===activeWorldId);}
+function getCont(){return getWorld()?.containers.find(c=>c.id===activeContId);}
+function getContDef(id){return CONTAINERS.find(c=>c.id===id);}
+function getItemDef(id){return ITEMS.find(i=>i.id===id);}
+function calcUsed(items){return items.reduce((a,e)=>{const d=getItemDef(e.itemId);return d?a+Math.ceil(e.qty/d.stack):a;},0);}
+function parseQty(s){
+  s=s.trim().toLowerCase();
+  const mx=s.match(/^(\d+)\s*[x×*]\s*(\d+)$/);if(mx)return parseInt(mx[1])*parseInt(mx[2]);
+  const ms=s.match(/^(\d+)\s*stacks?\s*\+?\s*(\d+)?$/);if(ms)return parseInt(ms[1])*64+(ms[2]?parseInt(ms[2]):0);
+  const n=parseInt(s);return isNaN(n)?0:n;
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.style.display='block';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{el.style.display='none';},2200);
+}
+
+// ─── Screen nav ───────────────────────────────────────────────────────────────
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+
+function gotoWorlds(){
+  renderWorlds();show('worlds');
+  if(state.worlds.length===0)openModal('addWorld');
+}
+
+// ─── Modals ───────────────────────────────────────────────────────────────────
+function openModal(id){
+  if(id==='addContainer')renderContPicker();
+  document.getElementById('modal-'+id).classList.add('open');
+  const inp=document.querySelector('#modal-'+id+' .inp');
+  if(inp)setTimeout(()=>inp.focus(),50);
+}
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('open');}
+
+// ─── Worlds ───────────────────────────────────────────────────────────────────
+function renderWorlds(){
+  const el=document.getElementById('worlds-list');
+  el.innerHTML='';
+  if(state.worlds.length===0){
+    el.innerHTML='<div style="text-align:center;padding:20px;font-size:7px;color:#666">No worlds yet. Create your first!</div>';
+    return;
+  }
+  state.worlds.forEach(w=>{
+    const d=document.createElement('div');
+    d.className='wcard'+(activeWorldId===w.id?' active':'');
+    const ico=makeTexImg('grass_block',32);
+    const info=document.createElement('div');
+    info.style.flex='1';
+    info.innerHTML=`<div style="font-size:8px">${w.name}</div><div style="font-size:6px;color:#888;margin-top:3px">${w.containers.length} containers</div>`;
+    const btn=document.createElement('button');
+    btn.className='btn sm red';btn.textContent='✕';
+    btn.onclick=e=>{e.stopPropagation();if(confirm('Delete world "'+w.name+'"?')){state.worlds=state.worlds.filter(x=>x.id!==w.id);persist();if(activeWorldId===w.id)activeWorldId=null;renderWorlds();}};
+    d.appendChild(ico);d.appendChild(info);d.appendChild(btn);
+    d.onclick=()=>{activeWorldId=w.id;renderStorage();show('storage');};
+    el.appendChild(d);
+  });
+}
+
+function doCreateWorld(){
+  const inp=document.getElementById('new-world-name');
+  const name=inp.value.trim();if(!name)return;
+  state.worlds.push({id:uid(),name,containers:[],created:Date.now()});
+  persist();inp.value='';closeModal('addWorld');
+  renderWorlds();show('worlds');toast('World created!');
+}
+
+// ─── Storage ──────────────────────────────────────────────────────────────────
+function renderStorage(){
+  const w=getWorld();if(!w)return;
+  document.getElementById('storage-title').textContent='🌍 '+w.name;
+  const totalItems=w.containers.reduce((a,c)=>a+c.items.reduce((b,i)=>b+i.qty,0),0);
+  const uniqueTypes=new Set(w.containers.flatMap(c=>c.items.map(i=>i.itemId))).size;
+  document.getElementById('storage-stats').innerHTML=
+    `<div class="schip"><span class="f6 dim">CONTAINERS</span><span style="font-size:8px;color:var(--green)">${w.containers.length}</span></div>`+
+    `<div class="schip"><span class="f6 dim">ITEMS</span><span style="font-size:8px;color:var(--green)">${totalItems}</span></div>`+
+    `<div class="schip"><span class="f6 dim">TYPES</span><span style="font-size:8px;color:var(--green)">${uniqueTypes}</span></div>`;
+  const grid=document.getElementById('container-grid');
+  grid.innerHTML='';
+  if(w.containers.length===0){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;font-size:7px;color:#555">No containers — add one below!</div>';
+    return;
+  }
+  w.containers.forEach(c=>{
+    const def=getContDef(c.type);
+    const used=calcUsed(c.items);
+    const total=def?.slots||27;
+    const pct=Math.round(used/total*100);
+    const fc=pct>85?'#FF5555':pct>60?'#FFAA00':'#55FF55';
+    const card=document.createElement('div');
+    card.className='ccard';
+    const ico=makeTexImg(def?.tex||'chest',48,def?.tint);
+    const name=document.createElement('div');
+    name.style.cssText='font-size:6px;line-height:1.4;max-width:90px;word-break:break-word;text-align:center';
+    name.textContent=c.name;
+    const slots=document.createElement('div');
+    slots.style.cssText='font-size:5px;color:#777';
+    slots.textContent=`${used}/${total} slots`;
+    const bar=document.createElement('div');bar.className='fbar';bar.style.width='80px';
+    const barInner=document.createElement('div');barInner.className='fbar-inner';
+    barInner.style.cssText=`width:${pct}%;background:${fc}`;
+    bar.appendChild(barInner);
+    card.appendChild(ico);card.appendChild(name);card.appendChild(slots);card.appendChild(bar);
+    card.onclick=()=>{activeContId=c.id;renderContainer();show('container');};
+    grid.appendChild(card);
+  });
+}
+
+// ─── Container picker ─────────────────────────────────────────────────────────
+function renderContPicker(){
+  const el=document.getElementById('cont-picker');el.innerHTML='';
+  CONTAINERS.forEach(c=>{
+    const opt=document.createElement('div');
+    opt.className='copt'+(selContType===c.id?' sel':'');
+    const ico=makeTexImg(c.tex,40,c.tint);
+    const name=document.createElement('div');
+    name.style.cssText='font-size:5.5px;color:#ddd;line-height:1.4';name.textContent=c.name;
+    const sl=document.createElement('div');
+    sl.style.cssText='font-size:5px;color:#888';sl.textContent=c.slots+' slots';
+    opt.appendChild(ico);opt.appendChild(name);opt.appendChild(sl);
+    opt.onclick=()=>{selContType=c.id;document.querySelectorAll('.copt').forEach(x=>x.classList.remove('sel'));opt.classList.add('sel');};
+    el.appendChild(opt);
+  });
+}
+
+function doAddContainer(){
+  const w=getWorld();if(!w)return;
+  const name=document.getElementById('new-cont-name').value.trim()||getContDef(selContType).name;
+  w.containers.push({id:uid(),type:selContType,name,items:[]});
+  persist();document.getElementById('new-cont-name').value='';
+  closeModal('addContainer');renderStorage();toast('Container added!');
+}
+
+// ─── Container view ───────────────────────────────────────────────────────────
+function renderContainer(){
+  const c=getCont();if(!c)return;
+  const def=getContDef(c.type);
+  const total=def?.slots||27;
+  const used=calcUsed(c.items);
+  const pct=Math.round(used/total*100);
+  const fc=pct>85?'#FF5555':pct>60?'#FFAA00':'#55FF55';
+  document.getElementById('cont-title').textContent=c.name;
+  document.getElementById('cont-slots').textContent=`${used}/${total}`;
+  // Header
+  const hdr=document.getElementById('cont-header');hdr.innerHTML='';
+  const ico=makeTexImg(def?.tex||'chest',40,def?.tint);
+  const info=document.createElement('div');info.style.flex='1';
+  info.innerHTML=`<div style="font-size:7px;color:var(--dim);margin-bottom:3px">${def?.name} — ${pct}% full</div><div class="fbar"><div class="fbar-inner" style="width:${pct}%;background:${fc}"></div></div>`;
+  const delbtn=document.createElement('button');delbtn.className='btn sm red';delbtn.textContent='Delete';
+  delbtn.onclick=()=>{if(confirm('Delete this container?')){const w=getWorld();w.containers=w.containers.filter(x=>x.id!==activeContId);persist();activeContId=null;renderStorage();show('storage');}};
+  hdr.appendChild(ico);hdr.appendChild(info);hdr.appendChild(delbtn);
+  // Inv grid
+  const grid=document.getElementById('inv-grid');grid.innerHTML='';
+  const fills=[];
+  c.items.forEach(entry=>{
+    const d=getItemDef(entry.itemId);if(!d)return;
+    const stacks=Math.ceil(entry.qty/d.stack);
+    for(let s=0;s<stacks;s++){
+      const isLast=s===stacks-1;
+      fills.push({entry,def:d,stackQty:isLast?(entry.qty%d.stack||d.stack):d.stack});
+    }
+  });
+  for(let i=0;i<total;i++){
+    const slot=document.createElement('div');slot.className='slot';
+    const fill=fills[i];
+    if(fill){
+      const img=makeTexImg(fill.def.tex,32);
+      slot.appendChild(img);
+      if(fill.stackQty!==fill.def.stack){
+        const sc=document.createElement('span');sc.className='sc';sc.textContent=fill.stackQty;
+        slot.appendChild(sc);
+      }
+    }
+    grid.appendChild(slot);
+  }
+  // Contents list
+  const sect=document.getElementById('contents-section');
+  const list=document.getElementById('contents-list');
+  const empty=document.getElementById('cont-empty');
+  if(c.items.length===0){sect.style.display='none';empty.style.display='block';}
+  else{
+    sect.style.display='block';empty.style.display='none';
+    list.innerHTML='';
+    c.items.forEach(entry=>{
+      const d=getItemDef(entry.itemId);if(!d)return;
+      const row=document.createElement('div');row.className='irow';
+      const ico=makeTexImg(d.tex,24);
+      const name=document.createElement('span');name.style.cssText='flex:1;font-size:7px';name.textContent=d.name;
+      const qty=document.createElement('span');qty.style.cssText='font-size:7px;color:var(--green)';qty.textContent='×'+entry.qty;
+      const badge=document.createElement('span');badge.style.cssText='font-size:5px;color:#666;padding:1px 4px;background:#2A2A2A;border:1px solid #444;margin-left:4px';badge.textContent=d.cat;
+      row.appendChild(ico);row.appendChild(name);row.appendChild(qty);row.appendChild(badge);
+      list.appendChild(row);
+    });
+  }
+  document.getElementById('btn-remove').disabled=c.items.length===0;
+}
+
+// ─── Item picker ──────────────────────────────────────────────────────────────
+const ALL_CATS=['All',...new Set(ITEMS.map(i=>i.cat))];
+
+function renderItemPicker(){
+  // cats
+  const catsEl=document.getElementById('item-cats');catsEl.innerHTML='';
+  ALL_CATS.forEach(cat=>{
+    const t=document.createElement('div');t.className='cat-tab'+(itemCat===cat?' on':'');
+    t.textContent=cat;t.onclick=()=>{itemCat=cat;renderItemPicker();};
+    catsEl.appendChild(t);
+  });
+  // items
+  const q=(document.getElementById('item-search-inp')?.value||'').toLowerCase();
+  const filtered=ITEMS.filter(i=>(itemCat==='All'||i.cat===itemCat)&&i.name.toLowerCase().includes(q));
+  const picker=document.getElementById('item-picker');picker.innerHTML='';
+  filtered.slice(0,100).forEach(item=>{
+    const opt=document.createElement('div');
+    opt.className='iopt'+(selItemId===item.id?' sel':'');
+    const ico=makeTexImg(item.tex,32);
+    const name=document.createElement('span');name.style.cssText='font-size:5px;color:#ddd;line-height:1.3';name.textContent=item.name;
+    opt.appendChild(ico);opt.appendChild(name);
+    opt.onclick=()=>{
+      selItemId=item.id;
+      document.querySelectorAll('.iopt').forEach(x=>x.classList.remove('sel'));
+      opt.classList.add('sel');
+      document.getElementById('qty-row').style.display='block';
+      document.getElementById('item-sel-hint').style.display='none';
+      document.getElementById('item-qty-inp').focus();
+    };
+    picker.appendChild(opt);
+  });
+}
+
+function doAddItem(){
+  const c=getCont();if(!c||!selItemId)return;
+  const qty=parseQty(document.getElementById('item-qty-inp').value);
+  if(qty<=0){toast('Invalid quantity');return;}
+  const def=getItemDef(selItemId);
+  const total=getContDef(c.type)?.slots||27;
+  const used=calcUsed(c.items);
+  const existing=c.items.find(i=>i.itemId===selItemId);
+  const existSlots=existing?Math.ceil(existing.qty/def.stack):0;
+  const newQty=existing?existing.qty+qty:qty;
+  const newSlots=Math.ceil(newQty/def.stack);
+  if(used-existSlots+newSlots>total){toast('Not enough slots!');return;}
+  if(existing)existing.qty+=qty;
+  else c.items.push({itemId:selItemId,qty});
+  persist();closeModal('addItem');
+  selItemId=null;
+  document.getElementById('item-qty-inp').value='1';
+  document.getElementById('qty-row').style.display='none';
+  document.getElementById('item-sel-hint').style.display='block';
+  renderContainer();toast(`Added ${qty}× ${def.name}`);
+}
+
+// ─── Remove item ──────────────────────────────────────────────────────────────
+function renderRemoveList(){
+  const c=getCont();if(!c)return;
+  const q=(document.getElementById('rm-search-inp')?.value||'').toLowerCase();
+  const list=document.getElementById('remove-list');list.innerHTML='';
+  c.items.filter(e=>{const d=getItemDef(e.itemId);return d&&d.name.toLowerCase().includes(q);}).forEach(entry=>{
+    const d=getItemDef(entry.itemId);if(!d)return;
+    const row=document.createElement('div');
+    row.className='irow'+(selRmItemId===entry.itemId?' sel':'');
+    const ico=makeTexImg(d.tex,24);
+    const name=document.createElement('span');name.style.cssText='flex:1;font-size:7px';name.textContent=d.name;
+    const qty=document.createElement('span');qty.style.cssText='font-size:7px;color:var(--green)';qty.textContent='×'+entry.qty;
+    row.appendChild(ico);row.appendChild(name);row.appendChild(qty);
+    row.onclick=()=>{
+      selRmItemId=entry.itemId;
+      document.querySelectorAll('#remove-list .irow').forEach(x=>x.classList.remove('sel'));
+      row.classList.add('sel');
+      document.getElementById('rm-qty-row').style.display='block';
+      document.getElementById('rm-qty-inp').value='1';
+      document.getElementById('rm-qty-inp').focus();
+    };
+    list.appendChild(row);
+  });
+}
+
+function doRemoveItem(){
+  const c=getCont();if(!c||!selRmItemId)return;
+  const qty=parseQty(document.getElementById('rm-qty-inp').value);
+  if(qty<=0){toast('Invalid quantity');return;}
+  const existing=c.items.find(i=>i.itemId===selRmItemId);if(!existing)return;
+  if(qty>=existing.qty)c.items=c.items.filter(i=>i.itemId!==selRmItemId);
+  else existing.qty-=qty;
+  persist();closeModal('removeItem');
+  selRmItemId=null;
+  document.getElementById('rm-qty-row').style.display='none';
+  renderContainer();toast('Item removed');
+}
+
+// ─── Global search ────────────────────────────────────────────────────────────
+function renderSearch(){
+  const q=(document.getElementById('gsearch-inp')?.value||'').toLowerCase().trim();
+  const el=document.getElementById('search-results');
+  if(q.length<2){el.innerHTML='<div style="text-align:center;padding:24px;font-size:7px;color:#555">Type at least 2 characters</div>';return;}
+  const w=getWorld();if(!w){el.innerHTML='';return;}
+  const results=[];
+  w.containers.forEach(c=>{
+    c.items.forEach(entry=>{
+      const d=getItemDef(entry.itemId);
+      if(d&&d.name.toLowerCase().includes(q))results.push({cid:c.id,cname:c.name,entry,def:d});
+    });
+  });
+  el.innerHTML='';
+  if(results.length===0){el.innerHTML=`<div style="text-align:center;padding:24px;font-size:7px;color:#555">Nothing found for "${q}"</div>`;return;}
+  results.forEach(r=>{
+    const row=document.createElement('div');row.className='sres';
+    const ico=makeTexImg(r.def.tex,32);
+    const info=document.createElement('div');info.style.flex='1';
+    info.innerHTML=`<div style="font-size:8px">${r.def.name}</div><div style="font-size:6px;color:#777;margin-top:3px">📦 ${r.cname}</div>`;
+    const qty=document.createElement('div');qty.style.cssText='font-size:8px;color:var(--green)';qty.textContent='×'+r.entry.qty;
+    row.appendChild(ico);row.appendChild(info);row.appendChild(qty);
+    row.onclick=()=>{activeContId=r.cid;renderContainer();show('container');document.getElementById('gsearch-inp').value='';};
+    el.appendChild(row);
+  });
+}
+
+// ─── Panorama clouds ──────────────────────────────────────────────────────────
+(function(){
+  const layer=document.getElementById('cloud-layer');
+  // Add stars
+  for(let i=0;i<12;i++){
+    const s=document.createElement('div');s.className='star';
+    s.style.left=Math.random()*100+'%';
+    s.style.top=Math.random()*35+'%';
+    s.style.animationDelay=Math.random()*4+'s';
+    layer.parentNode.insertBefore(s,layer);
+  }
+  // Clouds
+  const clouds=[
+    {x:-8,y:10,w:130,h:28,dur:85,delay:0},
+    {x:25,y:7,w:88,h:20,dur:115,delay:18},
+    {x:55,y:16,w:170,h:32,dur:75,delay:35},
+    {x:72,y:5,w:95,h:18,dur:100,delay:8},
+    {x:-15,y:26,w:75,h:16,dur:135,delay:50},
+  ];
+  const sheet=document.createElement('style');
+  sheet.textContent=`@keyframes cd{from{transform:translateX(-220px)}to{transform:translateX(110vw)}}`;
+  document.head.appendChild(sheet);
+  clouds.forEach(c=>{
+    const el=document.createElement('div');el.className='cloud';
+    el.style.cssText=`left:${c.x}%;top:${c.y}%;width:${c.w}px;height:${c.h}px;animation:cd ${c.dur}s linear ${c.delay}s infinite`;
+    layer.appendChild(el);
+  });
+  // Menu art: render chest + grass textures
+  setTimeout(()=>{
+    const art=document.getElementById('menu-art');
+    if(art){
+      art.appendChild(makeTexImg('chest',48));
+      art.appendChild(makeTexImg('grass_block',48));
+      art.appendChild(makeTexImg('chest',48));
+    }
+  },50);
+})();
+</script>
+</body>
+</html>
