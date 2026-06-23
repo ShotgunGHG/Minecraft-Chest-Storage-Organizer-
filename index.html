@@ -351,53 +351,69 @@ canvas.tex{image-rendering:pixelated;display:block}
       <button class="btn sm" onclick="closeModal('scan')">✕</button>
     </div>
 
+    <!-- Step 0: Worker URL -->
+    <div id="scan-step-apikey">
+      <div style="font-size:7px;color:var(--gold);margin-bottom:8px">One-time setup required</div>
+      <div style="font-size:6px;color:var(--dim);margin-bottom:10px;line-height:2.2">
+        Paste your Cloudflare Worker URL below.<br>
+        See the included <span style="color:var(--gold)">cloudflare-worker.js</span> file for setup instructions.
+      </div>
+      <input class="inp" id="scan-apikey-inp" type="url" placeholder="https://your-worker.workers.dev" style="margin-bottom:10px"/>
+      <button class="btn green" onclick="saveApiKey()">Save &amp; Continue</button>
+      <div style="font-size:6px;color:#555;text-align:center;margin-top:8px">Your URL is saved locally on this device only.</div>
+    </div>
+
     <!-- Step 1: Upload -->
-    <div id="scan-step-upload">
-      <div style="font-size:7px;color:var(--dim);margin-bottom:10px">Take or upload a screenshot of your open chest/container in Minecraft.</div>
-      <!-- Preview area -->
+    <div id="scan-step-upload" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:7px;color:var(--dim)">Upload a screenshot of your open container.</div>
+        <button class="btn sm" onclick="clearApiKey()" style="width:auto;padding:3px 7px;font-size:6px;flex-shrink:0">⚙ Worker URL</button>
+      </div>
       <div id="scan-preview-wrap" style="display:none;margin-bottom:10px;text-align:center">
-        <img id="scan-preview-img" style="max-width:100%;max-height:160px;image-rendering:pixelated;border:2px solid #555"/>
+        <img id="scan-preview-img" style="max-width:100%;max-height:150px;border:2px solid #555"/>
       </div>
       <label style="display:block;cursor:pointer">
         <div id="scan-drop-zone" style="border:2px dashed #555;padding:20px;text-align:center;font-size:7px;color:#777;background:var(--slot);transition:border-color .2s">
-          📁 Tap to choose image<br><span style="font-size:6px;color:#555;margin-top:4px;display:block">JPG, PNG — from camera roll or files</span>
+          📁 Tap to choose image<br><span style="font-size:6px;color:#555;margin-top:4px;display:block">JPG, PNG — camera roll or files</span>
         </div>
         <input type="file" id="scan-file-inp" accept="image/*" style="display:none" onchange="onScanFileChosen(event)"/>
       </label>
-      <div id="scan-upload-actions" style="display:none;margin-top:10px;display:none">
-        <button class="btn green" id="scan-go-btn" onclick="runScan()">🔍 Scan for Items</button>
+      <div id="scan-upload-actions" style="display:none;margin-top:10px">
+        <button class="btn green" onclick="runScan()">🔍 Scan for Items</button>
       </div>
     </div>
 
     <!-- Step 2: Scanning spinner -->
     <div id="scan-step-scanning" style="display:none;text-align:center;padding:20px 0">
-      <div style="font-size:20px;animation:spin 1s linear infinite;display:inline-block">⚙️</div>
-      <div style="font-size:7px;color:var(--dim);margin-top:10px">AI is scanning your screenshot...</div>
+      <div style="font-size:28px;animation:spin 1s linear infinite;display:inline-block">⚙️</div>
+      <div style="font-size:7px;color:var(--dim);margin-top:12px">AI is scanning your screenshot...</div>
       <div style="font-size:6px;color:#555;margin-top:6px">This takes a few seconds</div>
     </div>
 
     <!-- Step 3: Results -->
     <div id="scan-step-results" style="display:none">
-      <div style="font-size:7px;color:var(--dim);margin-bottom:8px">Found these items — edit if anything's wrong:</div>
-      <div id="scan-results-list" style="max-height:280px;overflow-y:auto;margin-bottom:10px"></div>
-      <!-- Add missed item row -->
+      <div style="font-size:7px;color:var(--dim);margin-bottom:8px">Found these items — edit anything wrong:</div>
+      <div id="scan-results-list" style="max-height:240px;overflow-y:auto;margin-bottom:10px"></div>
       <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;padding:6px;background:var(--slot);border:1px solid #444">
-        <span style="font-size:6px;color:#777;flex-shrink:0">ADD MISSED:</span>
-        <input class="inp" id="scan-add-name" placeholder="Item name..." style="flex:1;font-size:7px"/>
-        <input class="inp" id="scan-add-qty" placeholder="Qty" style="width:60px;font-size:7px"/>
+        <span style="font-size:6px;color:#777;flex-shrink:0">ADD:</span>
+        <input class="inp" id="scan-add-name" placeholder="Item name..."/>
+        <input class="inp" id="scan-add-qty" placeholder="Qty" style="width:70px"/>
         <button class="btn sm green" onclick="scanAddManualRow()" style="width:auto;padding:4px 8px;flex-shrink:0">+</button>
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn green" onclick="acceptScanResults()">✔ Accept All</button>
-        <button class="btn sm" onclick="openScanModal()">↺ Rescan</button>
+        <button class="btn sm" onclick="setScanStep('upload')">↺ Rescan</button>
       </div>
     </div>
 
     <!-- Step 4: Error -->
     <div id="scan-step-error" style="display:none;text-align:center;padding:16px 0">
-      <div style="font-size:16px">⚠️</div>
-      <div id="scan-error-msg" style="font-size:7px;color:var(--red);margin-top:8px"></div>
-      <button class="btn sm mt10" onclick="openScanModal()">Try Again</button>
+      <div style="font-size:22px">⚠️</div>
+      <div id="scan-error-msg" style="font-size:7px;color:var(--red);margin-top:10px;line-height:2"></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn sm" onclick="setScanStep('upload')">← Back</button>
+        <button class="btn sm green" onclick="runScan()">↺ Retry</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1612,26 +1628,45 @@ function renderSearch(){
 }
 
 // ─── Screenshot Scanner ───────────────────────────────────────────────────────
-let scanImageB64 = null;      // base64 of uploaded image (no data: prefix)
+const API_KEY_SK = 'mc_tracker_apikey';
+let scanImageB64 = null;
 let scanImageMime = 'image/jpeg';
-let scanResults = [];         // [{itemId, name, qty, matched}]
+let scanResults = [];
+
+function getApiKey() { return localStorage.getItem(API_KEY_SK) || ''; }
+
+function saveApiKey() {
+  const url = document.getElementById('scan-apikey-inp').value.trim();
+  if (!url.startsWith('https://')) { toast('Enter a valid https:// URL'); return; }
+  localStorage.setItem(API_KEY_SK, url);
+  setScanStep('upload');
+}
+
+function clearApiKey() {
+  localStorage.removeItem(API_KEY_SK);
+  document.getElementById('scan-apikey-inp').value = '';
+  setScanStep('apikey');
+}
 
 function openScanModal() {
-  // Reset to upload step
   scanImageB64 = null;
   scanResults = [];
-  setScanStep('upload');
+  document.getElementById('scan-file-inp').value = '';
   document.getElementById('scan-preview-wrap').style.display = 'none';
   document.getElementById('scan-upload-actions').style.display = 'none';
-  document.getElementById('scan-file-inp').value = '';
+  document.getElementById('scan-drop-zone').innerHTML =
+    '📁 Tap to choose image<br><span style="font-size:6px;color:#555;margin-top:4px;display:block">JPG, PNG — camera roll or files</span>';
   document.getElementById('scan-add-name').value = '';
   document.getElementById('scan-add-qty').value = '';
+  // Show API key step if no key saved, else go straight to upload
+  setScanStep(getApiKey() ? 'upload' : 'apikey');
   openModal('scan');
 }
 
 function setScanStep(step) {
-  ['upload','scanning','results','error'].forEach(s => {
-    document.getElementById('scan-step-'+s).style.display = s === step ? 'block' : 'none';
+  ['apikey','upload','scanning','results','error'].forEach(s => {
+    const el = document.getElementById('scan-step-'+s);
+    if (el) el.style.display = s === step ? 'block' : 'none';
   });
 }
 
@@ -1642,14 +1677,10 @@ function onScanFileChosen(e) {
   const reader = new FileReader();
   reader.onload = ev => {
     const dataUrl = ev.target.result;
-    // Show preview
-    const img = document.getElementById('scan-preview-img');
-    img.src = dataUrl;
+    document.getElementById('scan-preview-img').src = dataUrl;
     document.getElementById('scan-preview-wrap').style.display = 'block';
-    // Strip data: prefix to get raw base64
     scanImageB64 = dataUrl.split(',')[1];
     document.getElementById('scan-upload-actions').style.display = 'block';
-    // Update drop zone text
     document.getElementById('scan-drop-zone').innerHTML =
       '✅ Image loaded — tap Scan to analyse<br><span style="font-size:6px;color:#555;margin-top:4px;display:block">Tap again to change image</span>';
   };
@@ -1658,33 +1689,33 @@ function onScanFileChosen(e) {
 
 async function runScan() {
   if (!scanImageB64) { toast('No image selected'); return; }
+  const workerUrl = getApiKey();
+  if (!workerUrl) { setScanStep('apikey'); return; }
   setScanStep('scanning');
 
-  // Build item name list for the prompt
   const itemNames = ITEMS.map(i => i.name).join(', ');
-
   const prompt = `You are analyzing a Minecraft screenshot of an open chest, barrel, shulker box, or other storage container.
 
 Your task: identify every item slot that contains items and count how many of each item there is total.
 
-IMPORTANT RULES:
+RULES:
 - Look at every inventory slot carefully
-- Count stack numbers shown in the bottom-right of each slot (e.g. "64", "32", "12")
-- Slots with no number shown = 1 item
+- Read the stack number in the bottom-right corner of each slot (e.g. "64", "32", "12")
+- A slot with no number = 1 item
 - Empty slots = skip
-- Combine duplicate items (e.g. two slots of 32 diamonds = 64 diamonds total)
-- Only include items you can actually see — do not guess
+- Combine duplicates (two slots of 32 diamonds = 64 total)
+- Only report items you can actually see
 
-Known Minecraft items for reference (match to these names exactly when possible):
+Known Minecraft items (match names exactly when possible):
 ${itemNames}
 
-Respond ONLY with a JSON array, no other text, no markdown, no explanation. Format:
-[{"name":"Diamond","qty":64},{"name":"Cobblestone","qty":192},{"name":"Iron Ingot","qty":32}]
+Respond ONLY with a JSON array. No markdown, no explanation, nothing else. Example:
+[{"name":"Diamond","qty":64},{"name":"Cobblestone","qty":192}]
 
-If you cannot detect any items, return: []`;
+If no items visible, return: []`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch(workerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1693,10 +1724,7 @@ If you cannot detect any items, return: []`;
         messages: [{
           role: 'user',
           content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: scanImageMime, data: scanImageB64 }
-            },
+            { type: 'image', source: { type: 'base64', media_type: scanImageMime, data: scanImageB64 } },
             { type: 'text', text: prompt }
           ]
         }]
@@ -1704,33 +1732,34 @@ If you cannot detect any items, return: []`;
     });
 
     if (!res.ok) {
-      const err = await res.text();
-      throw new Error('API error ' + res.status + ': ' + err.slice(0, 120));
+      let errMsg = `Worker error ${res.status}`;
+      try {
+        const errBody = await res.json();
+        errMsg = errBody?.error?.message || errMsg;
+        if (res.status === 401) errMsg = 'Worker auth failed — check your Worker is deployed correctly.';
+        if (res.status === 429) errMsg = 'Rate limit — wait a moment and try again.';
+        if (res.status === 400) errMsg = 'Image may be too large or corrupted. Try a different screenshot.';
+      } catch {}
+      throw new Error(errMsg);
     }
 
     const data = await res.json();
     const raw = (data.content || []).map(b => b.text || '').join('').trim();
-
-    // Strip markdown fences if present
     const cleaned = raw.replace(/```json|```/g, '').trim();
+
     let parsed;
     try { parsed = JSON.parse(cleaned); }
-    catch { throw new Error('Could not parse AI response. Try a clearer screenshot.'); }
+    catch { throw new Error('AI response was not valid JSON. Try a clearer screenshot.'); }
 
-    if (!Array.isArray(parsed)) throw new Error('Unexpected response format.');
-    if (parsed.length === 0) {
-      throw new Error('No items detected. Make sure the chest inventory is fully open and visible in the screenshot.');
-    }
+    if (!Array.isArray(parsed)) throw new Error('Unexpected response format — try again.');
+    if (parsed.length === 0) throw new Error('No items detected. Make sure the chest is fully open and clearly visible.');
 
-    // Match each result to our ITEMS list
     scanResults = parsed.map(r => {
       const name = (r.name || '').trim();
-      const qty = parseInt(r.qty) || 1;
-      // Try exact match first (case-insensitive)
+      const qty = Math.max(1, parseInt(r.qty) || 1);
       let match = ITEMS.find(i => i.name.toLowerCase() === name.toLowerCase());
-      // Try partial match
       if (!match) match = ITEMS.find(i => i.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(i.name.toLowerCase().split(' ')[0]));
-      return { itemId: match ? match.id : null, name: match ? match.name : name, qty, matched: !!match };
+      return { itemId: match?.id || null, name: match ? match.name : name, qty, matched: !!match };
     });
 
     renderScanResults();
