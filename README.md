@@ -1,6 +1,5 @@
 # Minecraft-Chest-Storage-Organizer-
-          (URL at the bottom)
-
+          
 I Made a Website for Minecraft Storage Organization
 
 Features Include
@@ -16,7 +15,7 @@ Features Include
 
 Storage Tracker was made to help Minecraft players keep their storage systems organized and make finding items faster and easier than just looking through every Chest ingame.
 
-You get To thr Website with this 
+You get To the Website with this 
 URL 
 
 https://shotgunghg.github.io/Minecraft-Chest-Storage-Organizer-/
