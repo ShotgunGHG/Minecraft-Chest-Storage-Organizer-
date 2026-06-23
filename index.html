@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
 <title>Storage Tracker</title>
 
 <!-- iOS Home Screen / PWA -->
@@ -51,9 +51,11 @@ html,body{height:100%;font-family:var(--font);background:#000;color:var(--text);
 .btn.green{background:linear-gradient(180deg,#30A030,#207020,#104010);color:#B0FFB0;border-color:#30A030 #104010 #104010 #30A030}
 .btn.green:hover{color:#D0FFD0}
 /* Input */
-.inp{width:100%;padding:7px 10px;font-family:var(--font);font-size:8px;color:var(--text);background:var(--slot);border:2px solid;border-color:#111 #666 #666 #111;outline:none;caret-color:var(--green)}
+.inp{width:100%;padding:7px 10px;font-family:var(--font);font-size:16px;color:var(--text);background:var(--slot);border:2px solid;border-color:#111 #666 #666 #111;outline:none;caret-color:var(--green);-webkit-appearance:none;border-radius:0}
 .inp:focus{border-color:var(--gold)}
 .inp::placeholder{color:#555}
+/* Also prevent zoom on scan qty input */
+input[type=number]{font-size:16px;-webkit-appearance:none;border-radius:0}
 /* Panel */
 .panel{background:var(--panel);border:3px solid;border-color:#666 #222 #222 #666;padding:14px}
 .ptitle{font-size:9px;color:var(--dim);text-align:center;letter-spacing:1px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #4A4A4A}
@@ -1841,6 +1843,21 @@ function acceptScanResults() {
   if (skipped > 0) toast(`Added ${added} items (${skipped} skipped — not enough slots or unrecognised)`);
   else toast(`✔ Added ${added} item type${added !== 1 ? 's' : ''} from screenshot`);
 }
+
+// ─── Prevent iOS zoom ─────────────────────────────────────────────────────────
+// Safari ignores user-scalable=no since iOS 10, so we block it in JS instead.
+// Block pinch-zoom (gesturestart) and double-tap zoom (touchstart with 2 touches).
+document.addEventListener('gesturestart', e => e.preventDefault(), {passive: false});
+document.addEventListener('gesturechange', e => e.preventDefault(), {passive: false});
+document.addEventListener('gestureend', e => e.preventDefault(), {passive: false});
+// Block double-tap zoom
+let lastTap = 0;
+document.addEventListener('touchstart', e => {
+  if (e.touches.length > 1) { e.preventDefault(); return; }
+  const now = Date.now();
+  if (now - lastTap < 300) e.preventDefault();
+  lastTap = now;
+}, {passive: false});
 
 // ─── Panorama clouds ──────────────────────────────────────────────────────────
 (function(){
